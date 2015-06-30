@@ -29,7 +29,7 @@ t = linspace(0,1,n+1);
 
 beta = 0.05;
 a = 1/sqrt(2*pi*beta^2)*exp(-0.5*(1/beta^2)*t.^2);
-A = 1/n*toeplitz(a); #toeplitz is a diag matrix with a as diag, 1/n is
+G = 1/n*toeplitz(a); #toeplitz is a diag matrix with a as diag, 1/n is
     #the width of each riemann rectangle
 
 
@@ -38,7 +38,7 @@ utrue = -1.6*sin(2*pi*t);
 
 ## ------------Add noise to truth to create data-----------
 
-y0 = A*utrue;    # Noiseless signal - true value in the absence of errorm
+y0 = G*utrue;    # Noiseless signal - true value in the absence of errorm
 std = maximum(abs(y0))*(noise/100);  # STD of the noise for each data pt
 Gamma = std*eye(n+1);  #covariance matrix is diagonal if we assume each
     #data pt is independent
@@ -83,7 +83,7 @@ L_D = diagm(ones(n+1)) - diagm(0.5*ones(n),1) - diagm(0.5*ones(n),-1);
   #multiply times n to make C more important
   C = n *(gamma^2) * inv(L'*L);
  
-    return A,utrue,y,Gamma,C
+    return G,utrue,y,Gamma,C
 end
 
 # A,u,y,Gamma,C = deconv2(10,5);
@@ -95,11 +95,11 @@ end
 
 
 function testForward(u)
-y = A*u;
+y = G*u;
 return y
 end
  
-A,strue,yvec,Gamma,C = deconv2(20,5);
+
 
 
 

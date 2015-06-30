@@ -3,6 +3,7 @@
 #using Debug
 using PyPlot
 
+close("all")
 
 const EXAMPLEFLAG = 1 # 1 = deconvolution test problem
 # 2 = ellen.jl forward model
@@ -27,7 +28,7 @@ function colnorms(Y)
     return norms
 end
 
-function rangefinder(A; epsilon=1e-8, r=10)#implements algorithm 4.2 in halko et al
+function rangefinder(A; epsilon=1e-10, r=20)#implements algorithm 4.2 in halko et al
     m = size(A, 1)
     n = size(A, 2)
     Omega = randn(n, r)
@@ -49,8 +50,8 @@ function rangefinder(A; epsilon=1e-8, r=10)#implements algorithm 4.2 in halko et
     return Q
 end
 
-function randSVD(A; epsilon=1e-8, r=10)
-    Q = rangefinder(A; epsilon=1e-8, r=10);
+function randSVD(A; epsilon=1e-10, r=20)
+    Q = rangefinder(A; epsilon=1e-10, r=20);
     B = Q' * A;
     Util,() = svd(B);
     U = Q*Util;
@@ -59,7 +60,7 @@ end
 
 if EXAMPLEFLAG == 1
     include("deconvolutionTestProblem.jl")
-    A,strue,yvec,Gamma,C = deconv2(20,5);
+    G,strue,yvec,Gamma,C = deconv2(20,5);
     U = randSVD(C); #Do random SVD on the prior part covariance matrix
 elseif EXAMPLEFLAG == 2
     include("~/codes/finitedifference2d.jl/ellen.jl")
@@ -99,10 +100,10 @@ function pcgaiteration(forwardmodel,s, X, xis, R, y)
     end
     HX = (results[end - 1] - results[1]) / delta
     Hs = (results[end] - results[K+1]) / delta
-    A = [HQHpR HX; transpose(HX) zeros(p, p)]
+    bigA = [HQHpR HX; transpose(HX) zeros(p, p)]
     b = [y - results[1] + Hs; zeros(p)]
-    x = A \ b # we will replace this with a Krylov solver or something
-    # like UMFPACK?
+    x = bigA \ b # we will replace this with a Krylov solver or something
+rele    # like UMFPACK?
     s_new = X * x[end] + transpose(HQ) * x[1:end-1]
     return s_new #, HQ,HQHpR
 end
@@ -115,9 +116,10 @@ end
 
 
 #Runs the optimization loop until it converges
-const total_iter = 102;
+const total_iter = 1000;
 #s0 = strue+0.05*randn(length(strue));
-s0 = 0.5*ones(length(strue));
+#s0 = 0.5*ones(length(strue));
+s0 = zeros(length(strue));
 relerror = Array(Float64,total_iter+1)
 sbar  = Array(Float64,length(strue),total_iter+1)
 sbar[:,1] = s0;
@@ -135,8 +137,8 @@ return sbar,relerror
 # 2.059780712550066e18
 
 x = linspace(0,1,20);
-plot(x,strue,x,sbar[:,1],x,sbar[:,end-1],x,sbar[:,end],linestyle="-",marker="o")
-legend(["sythetic","initial s_0","s_end-1","s_end"])
+plot(x,strue,x,sbar[:,1],x,sbar[:,end-2],x,sbar[:,end-1],x,sbar[:,end],linestyle="-",marker="o")
+legend(["sythetic","initial s_0","s_end-2","s_end-1","s_end"])
 xlabel("unit 1D domain x")
 ylabel("1D parameter field s(x)")
 title(["Various iterates, total iterates = ",repr(total_iter)])
