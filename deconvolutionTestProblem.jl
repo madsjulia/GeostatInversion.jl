@@ -99,8 +99,8 @@ y = A*u;
 return y
 end
  
-# xis = 
+A,strue,yvec,Gamma,C = deconv2(20,5);
 
-# s0 = zeros(length(utrue));
 
-# s1 = pcgaiteration(testForward,s0, utrue, xis, Gamma, y)
+
+
