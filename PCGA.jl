@@ -3,7 +3,7 @@
 #using Debug
 using PyPlot
 
-const numparams = 20
+const numparams = 30
 
 close("all")
 
@@ -60,9 +60,11 @@ function randSVD(A; epsilon=1e-10, r=20)
     return U
 end 
 
+const noise = 1
+
 if EXAMPLEFLAG == 1
     include("deconvolutionTestProblem.jl")
-    G,strue,yvec,Gamma,C = deconv2(numparams,0);
+    G,strue,yvec,Gamma,C = deconv2(numparams,noise);
 	yvec = vec(yvec[:, 1])
 	#yvec = testForward(strue)
     U = randSVD(C); #Do random SVD on the prior part covariance matrix
@@ -150,10 +152,10 @@ return sbar,relerror
 
 x = linspace(0,1,numparams);
 plot(x,strue,x,sbar[:,1],x,sbar[:,end-2],x,sbar[:,end-1],x,sbar[:,end],linestyle="-",marker="o")
-#legend(["sythetic","initial s_0","s_end-2","s_end-1","s_end"])
+legend(["sythetic","initial s_0","s_end-2","s_end-1","s_end"])
 xlabel("unit 1D domain x")
 ylabel("1D parameter field s(x)")
-title(["Various iterates, total iterates = ",repr(total_iter)])
+title("Various iterates, total iterates = $total_iter")
 grid("on")
 
 figure(2)

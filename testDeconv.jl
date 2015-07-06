@@ -4,8 +4,12 @@ using Calculus
 
 close("all")
 
+const numparams=30
+const noise = 1
+
 include("deconvolutionTestProblem.jl") 
-A,strue,yvec,Gamma,C = deconv2(20,5);
+
+A,strue,yvec,Gamma,C = deconv2(numparams,noise);
 
 #s0 = -0.5*strue + 0.1*randn(length(strue));
 s0 = zeros(length(strue));
@@ -15,13 +19,24 @@ function cost(s::Vector)
   c = reshape(c,1)[1]
 end
 
+# function cost_gradient!(x::Vector, y::Vector)
+# 	result = gradient(cost, x)
+# 	for i = 1:length(y)
+# 		y[i] = result[i]
+# 	end
+# 	return result
+# end
+
+#the exact gradient below
 function cost_gradient!(x::Vector, y::Vector)
-	result = gradient(cost, x)
+    result = A'*((Gamma\A)*x) + C\x - A'*(Gamma\yvec)-(C\s0) 
 	for i = 1:length(y)
-		y[i] = result[i]
+	      y[i] = result[i]
 	end
 	return result
 end
+
+
 function cost_hessian!(x::Vector, y::Matrix)
 	result = hessian(cost, x)
 	for i = 1:length(y)
@@ -32,12 +47,11 @@ end
 
 res = optimize(cost, s0, iterations = 20,store_trace = true,)
 
-x = linspace(0,1,20)
+x = linspace(0,1,numparams)
 plot(x,strue,x,s0,x,res.minimum,linestyle="-",marker="o")
 
 res = optimize(cost, s0, iterations = 50,store_trace = true,)
 plot(x,res.minimum,linestyle="-",marker="o")
-
 
 res = optimize(cost, s0, iterations = 100,store_trace = true,)
 plot(x,res.minimum,linestyle="-",marker="o")
@@ -45,9 +59,27 @@ plot(x,res.minimum,linestyle="-",marker="o")
 res = optimize(cost, s0, store_trace = true,)
 plot(x,res.minimum,linestyle="-",marker="o")
 
+n = res.iterations;
+
 legend(["synthetic","initial","s_20","s_50","s_100","min = s_$n"])
 
+f = cost
+g! = cost_gradient!
+h! = cost_hessian!
 
+figure(2)
+res = optimize(f, g!, h!, s0, method=:newton, ftol = 1e-10, grtol = 1e-10, iterations = 1)
+s1 = res.minimum;
+plot(x,strue,x,s0,linestyle="-",marker="o")
+plot(x,s1,linestyle="-",marker="o")
+
+maxit = 10
+
+res = optimize(f, g!, h!, s0, method=:newton, ftol = 1e-10, grtol = 1e-10, iterations = maxit)
+s2 = res.minimum;
+plot(x,s2,linestyle="-",marker="o")
+
+legend(["synthetic","initial s_0","s_1","s_$maxit"])
 
 
 
