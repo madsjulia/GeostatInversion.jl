@@ -3,6 +3,8 @@
 #using Debug
 using PyPlot
 
+const numparams = 20
+
 close("all")
 
 const EXAMPLEFLAG = 1 # 1 = deconvolution test problem
@@ -60,7 +62,9 @@ end
 
 if EXAMPLEFLAG == 1
     include("deconvolutionTestProblem.jl")
-    G,strue,yvec,Gamma,C = deconv2(20,5);
+    G,strue,yvec,Gamma,C = deconv2(numparams,0);
+	yvec = vec(yvec[:, 1])
+	#yvec = testForward(strue)
     U = randSVD(C); #Do random SVD on the prior part covariance matrix
 elseif EXAMPLEFLAG == 2
     include("~/codes/finitedifference2d.jl/ellen.jl")
@@ -70,7 +74,7 @@ end
 
 
 # @debug function pcgaiteration(s, X, xis, R, y; forwardmodel = testForward)
-function pcgaiteration(forwardmodel,s, X, xis, R, y)
+function pcgaiteration(forwardmodel::Function,s::Vector, X::Vector, xis::Array{Array{Float64, 1}, 1}, R::Matrix, y::Vector)
     # Inputs: 
     # forwardmodel - param to obs map h(s)
     #            s - current iterate s_k or sbar          
@@ -86,7 +90,14 @@ function pcgaiteration(forwardmodel,s, X, xis, R, y)
     p = 1
     K = length(xis)
     m = length(xis[1])
-    paramstorun = [s .+ delta .* xis,{s,s + delta * X, s + delta * s}]
+    #paramstorun = Array{Float64, 1}[s .+ delta .* xis,{s,s + delta * X, s + delta * s}]
+	paramstorun = Array(Array{Float64, 1}, length(xis) + 3)
+	for i = 1:length(xis)
+		paramstorun[i] = s + delta * xis[i]
+	end
+	paramstorun[length(xis) + 1] = s
+	paramstorun[length(xis) + 2] = s + delta * X
+	paramstorun[length(xis) + 3] = s + delta * s
     results = pmap(forwardmodel, paramstorun)
     n = length(results[1])
     # etai = Array(Float64, m)   
@@ -105,10 +116,11 @@ function pcgaiteration(forwardmodel,s, X, xis, R, y)
     x = bigA \ b # we will replace this with a Krylov solver or something
 rele    # like UMFPACK?
     s_new = X * x[end] + transpose(HQ) * x[1:end-1]
+	println(s_new - s)
     return s_new #, HQ,HQHpR
 end
 
-Xis = {U[:,1],U[:,2]};
+Xis = Array{Float64, 1}[U[:,1],U[:,2]];
 
 for i = 3:size(U,2)
     Xis = push!(Xis,U[:,i])
@@ -116,7 +128,7 @@ end
 
 
 #Runs the optimization loop until it converges
-const total_iter = 1000;
+const total_iter = 200;
 #s0 = strue+0.05*randn(length(strue));
 #s0 = 0.5*ones(length(strue));
 s0 = zeros(length(strue));
@@ -136,9 +148,9 @@ return sbar,relerror
 #  norm(HQHpR-(A'*C*A+Gamma))
 # 2.059780712550066e18
 
-x = linspace(0,1,20);
+x = linspace(0,1,numparams);
 plot(x,strue,x,sbar[:,1],x,sbar[:,end-2],x,sbar[:,end-1],x,sbar[:,end],linestyle="-",marker="o")
-legend(["sythetic","initial s_0","s_end-2","s_end-1","s_end"])
+#legend(["sythetic","initial s_0","s_end-2","s_end-1","s_end"])
 xlabel("unit 1D domain x")
 ylabel("1D parameter field s(x)")
 title(["Various iterates, total iterates = ",repr(total_iter)])

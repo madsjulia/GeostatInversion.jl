@@ -1,4 +1,6 @@
 using Optim
+using PyPlot
+using Calculus
 
 close("all")
 
@@ -11,6 +13,21 @@ s0 = zeros(length(strue));
 function cost(s::Vector)
   c = 0.5.*(yvec-A*s)'*inv(Gamma)*(yvec-A*s) + 0.5.*(s-s0)'*inv(C)*(s-s0)
   c = reshape(c,1)[1]
+end
+
+function cost_gradient!(x::Vector, y::Vector)
+	result = gradient(cost, x)
+	for i = 1:length(y)
+		y[i] = result[i]
+	end
+	return result
+end
+function cost_hessian!(x::Vector, y::Matrix)
+	result = hessian(cost, x)
+	for i = 1:length(y)
+		y[i] = result[i]
+	end
+	return result
 end
 
 res = optimize(cost, s0, iterations = 20,store_trace = true,)
