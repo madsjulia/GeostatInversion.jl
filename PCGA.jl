@@ -60,7 +60,7 @@ function randSVD(A; epsilon=1e-10, r=20)
     return U
 end 
 
-const noise = 1
+const noise = 4
 
 if EXAMPLEFLAG == 1
     include("deconvolutionTestProblem.jl")
@@ -155,9 +155,11 @@ plot(x,strue,x,sbar[:,1],x,sbar[:,end-2],x,sbar[:,end-1],x,sbar[:,end],linestyle
 legend(["sythetic","initial s_0","s_end-2","s_end-1","s_end"])
 xlabel("unit 1D domain x")
 ylabel("1D parameter field s(x)")
-title("PCGA, total iterates = $total_iter")
-#grid("on")
+title("PCGA, total iterates = $total_iter, noise = $noise")
+grid("on")
 
 figure(2)
 plot(1:total_iter+1,relerror,linestyle="-",marker="o")
 title("Relative error vs iteration number, PCGA method")
+
+relErrPCGA = norm(sbar[:,end]-strue)/norm(strue)

@@ -10,7 +10,7 @@ close("all")
 const EXAMPLEFLAG = 1 # 1 = deconvolution test problem
 # 2 = ellen.jl forward model
 
-const noise = 1
+const noise = 4
 
 if EXAMPLEFLAG == 1
     include("deconvolutionTestProblem.jl")
@@ -78,9 +78,11 @@ plot(x,strue,x,sbar[:,1],x,sbar[:,end-2],x,sbar[:,end-1],x,sbar[:,end],linestyle
 legend(["sythetic","initial s_0","s_end-2","s_end-1","s_end"])
 xlabel("unit 1D domain x")
 ylabel("1D parameter field s(x)")
-title("GA Method, total iterates = $total_iter")
+title("GA Method, total iterates = $total_iter, noise = $noise")
 grid("on")
 
 figure(2)
 plot(1:total_iter+1,relerror,linestyle="-",marker="o")
 title("Relative error vs iteration number, GA method")
+
+relErrGA = norm(sbar[:,end]-strue)/norm(strue)

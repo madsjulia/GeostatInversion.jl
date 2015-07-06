@@ -5,7 +5,7 @@ using Calculus
 close("all")
 
 const numparams=30
-const noise = 1
+const noise = 4
 
 include("deconvolutionTestProblem.jl") 
 
@@ -76,14 +76,15 @@ plot(x,s1,linestyle="-",marker="o")
 maxit = 10
 
 res = optimize(f, g!, h!, s0, method=:newton, ftol = 1e-15, grtol = 1e-15, iterations = maxit)
-s2 = res.minimum;
-plot(x,s2,linestyle="-",marker="o")
+s_end = res.minimum;
+plot(x,s_end,linestyle="-",marker="o")
 grid("on")
 its = res.iterations
 legend(["synthetic","initial s_0","s_1","s_$its"])
 
 title("Newton's method, total iterates = $its")
 
+relErrNewton = norm(s_end-strue)/norm(strue)
 
 
 #names(res)
