@@ -47,7 +47,7 @@ function gaiteration(forwardmodel::Function,s::Vector, X::Vector, Q::Matrix, R::
     x = bigA \ b # we will replace this with a Krylov solver or something
     # like UMFPACK?
     s_new = X * x[end] + Q*H' * x[1:end-1]
-	println(s_new - s)
+#	println(s_new - s)
     return s_new #, HQ,HQHpR
 end
 
@@ -78,7 +78,7 @@ plot(x,strue,x,sbar[:,1],x,sbar[:,end-2],x,sbar[:,end-1],x,sbar[:,end],linestyle
 legend(["sythetic","initial s_0","s_end-2","s_end-1","s_end"])
 xlabel("unit 1D domain x")
 ylabel("1D parameter field s(x)")
-title("Various iterates, total iterates = $total_iter")
+title("GA Method, total iterates = $total_iter")
 grid("on")
 
 figure(2)

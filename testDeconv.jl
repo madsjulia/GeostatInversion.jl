@@ -68,18 +68,21 @@ g! = cost_gradient!
 h! = cost_hessian!
 
 figure(2)
-res = optimize(f, g!, h!, s0, method=:newton, ftol = 1e-10, grtol = 1e-10, iterations = 1)
+res = optimize(f, g!, h!, s0, method=:newton, ftol = 1e-15, grtol = 1e-15, iterations = 1)
 s1 = res.minimum;
 plot(x,strue,x,s0,linestyle="-",marker="o")
 plot(x,s1,linestyle="-",marker="o")
 
 maxit = 10
 
-res = optimize(f, g!, h!, s0, method=:newton, ftol = 1e-10, grtol = 1e-10, iterations = maxit)
+res = optimize(f, g!, h!, s0, method=:newton, ftol = 1e-15, grtol = 1e-15, iterations = maxit)
 s2 = res.minimum;
 plot(x,s2,linestyle="-",marker="o")
+grid("on")
+its = res.iterations
+legend(["synthetic","initial s_0","s_1","s_$its"])
 
-legend(["synthetic","initial s_0","s_1","s_$maxit"])
+title("Newton's method, total iterates = $its")
 
 
 
