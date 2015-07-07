@@ -86,19 +86,18 @@ function pcgaiteration(forwardmodel::Function,s::Vector, X::Vector, xis::Array{A
     #          columns in a list xis = [col1,col2,....]
     #            R - covariance of measurement error (data misfit term)
     #            y - data vector     
-
     global delta
     p = 1
     K = length(xis)
     m = length(xis[1])
     #paramstorun = Array{Float64, 1}[s .+ delta .* xis,{s,s + delta * X, s + delta * s}]
-	paramstorun = Array(Array{Float64, 1}, length(xis) + 3)
-	for i = 1:length(xis)
-		paramstorun[i] = s + delta * xis[i]
-	end
-	paramstorun[length(xis) + 1] = s
-	paramstorun[length(xis) + 2] = s + delta * X
-	paramstorun[length(xis) + 3] = s + delta * s
+    paramstorun = Array(Array{Float64, 1}, length(xis) + 3)
+    for i = 1:length(xis)
+	paramstorun[i] = s + delta * xis[i]
+    end
+    paramstorun[length(xis) + 1] = s
+    paramstorun[length(xis) + 2] = s + delta * X
+    paramstorun[length(xis) + 3] = s + delta * s
     results = pmap(forwardmodel, paramstorun)
     n = length(results[1])
     # etai = Array(Float64, m)   
@@ -110,15 +109,22 @@ function pcgaiteration(forwardmodel::Function,s::Vector, X::Vector, xis::Array{A
 	HQ += etai * transpose(xis[i])
 	HQHpR += etai * transpose(etai)
     end
-    HX = (results[end - 1] - results[1]) / delta
+    # @bp #These matrix products are good 1e-10 order: 
+    # norm(HQ-G*C)
+    # norm(HQHpR-(G*C*G'+Gamma)) 
+    HX = (results[end-1] - results[end-2]) / delta
+    # @bp #This is 0 now, was an error here
+    # norm(forwardmodel(X)-HX)/norm(forwardmodel(X))
     Hs = (results[end] - results[K+1]) / delta
+    # @bp
     bigA = [HQHpR HX; transpose(HX) zeros(p, p)]
     b = [y - results[1] + Hs; zeros(p)]
+    #@bp   
     x = bigA \ b # we will replace this with a Krylov solver or something
-rele    # like UMFPACK?
-    s_new = X * x[end] + transpose(HQ) * x[1:end-1]
-	#println(s_new - s)
-    return s_new #, HQ,HQHpR
+    # like UMFPACK?
+    s_new = X * x[end] + (HQ)'* x[1:end-1]
+    #println(s_new - s)
+    return s_new #HQ,HQHpR
 end
 
 Zis = Array{Float64, 1}[Z[:,1],Z[:,2]];
@@ -154,11 +160,12 @@ plot(x,strue,x,sbar[:,1],x,sbar[:,end-2],x,sbar[:,end-1],x,sbar[:,end],linestyle
 legend(["sythetic","initial s_0","s_end-2","s_end-1","s_end"])
 xlabel("unit 1D domain x")
 ylabel("1D parameter field s(x)")
-title("PCGA, total iterates = $total_iter, noise = $noise")
+title("PCGA, total iterates = $total_iter, noise = $noise %")
 grid("on")
 
 figure(2)
 plot(1:total_iter+1,relerror,linestyle="-",marker="o")
 title("Relative error vs iteration number, PCGA method")
 
-relErrPCGA = norm(sbar[:,end]-strue)/norm(strue)
+rel_errPCGA = norm(sbar[:,end]-strue)/norm(strue);
+@show(rel_errPCGA)
