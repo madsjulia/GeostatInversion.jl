@@ -52,22 +52,21 @@ function rangefinder(A; epsilon=1e-10, r=20)#implements algorithm 4.2 in halko e
     return Q
 end
 
-function randSVD(A; epsilon=1e-10, r=20)
+function randSVDzetas(A; epsilon=1e-10, r=20)
     Q = rangefinder(A; epsilon=1e-10, r=20);
     B = Q' * A;
-    Util,() = svd(B);
-    U = Q*Util;
-    return U
-end 
+    (),S,V = svd(B);
+    Sh = diagm(sqrt(S))
+    Z = V*Sh 
+    return Z
+end  
 
 const noise = 4
 
 if EXAMPLEFLAG == 1
     include("deconvolutionTestProblem.jl")
     G,strue,yvec,Gamma,C = deconv2(numparams,noise);
-	yvec = vec(yvec[:, 1])
-	#yvec = testForward(strue)
-    U = randSVD(C); #Do random SVD on the prior part covariance matrix
+    Z = randSVDzetas(C); #Do random SVD on the prior part covariance matrix
 elseif EXAMPLEFLAG == 2
     include("~/codes/finitedifference2d.jl/ellen.jl")
 else
@@ -118,14 +117,14 @@ function pcgaiteration(forwardmodel::Function,s::Vector, X::Vector, xis::Array{A
     x = bigA \ b # we will replace this with a Krylov solver or something
 rele    # like UMFPACK?
     s_new = X * x[end] + transpose(HQ) * x[1:end-1]
-	println(s_new - s)
+	#println(s_new - s)
     return s_new #, HQ,HQHpR
 end
 
-Xis = Array{Float64, 1}[U[:,1],U[:,2]];
+Zis = Array{Float64, 1}[Z[:,1],Z[:,2]];
 
-for i = 3:size(U,2)
-    Xis = push!(Xis,U[:,i])
+for i = 3:size(Z,2)
+    Zis = push!(Zis,Z[:,i])
 end
 
 
@@ -140,7 +139,7 @@ sbar[:,1] = s0;
 relerror[1] = norm(sbar[:,1]-strue)/norm(strue);
 
 for k = 1:total_iter
-    sbar[:,k+1] = pcgaiteration(testForward, sbar[:,k], strue, Xis, Gamma, yvec)
+    sbar[:,k+1] = pcgaiteration(testForward, sbar[:,k], strue, Zis, Gamma, yvec)
     relerror[k+1] = norm(sbar[:,k+1]-strue)/norm(strue);
 end
 
