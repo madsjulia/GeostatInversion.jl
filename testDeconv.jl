@@ -82,7 +82,7 @@ grid("on")
 its = res.iterations
 legend(["synthetic","initial s_0","s_1","s_$its"])
 
-title("Newton's method, total iterates = $its")
+title("Newton's method, total iterates = $its, noise = $noise%")
 
 relErrNewton = norm(s_end-strue)/norm(strue)
 
