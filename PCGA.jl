@@ -110,7 +110,7 @@ function pcgaiteration(forwardmodel::Function,s::Vector, X::Vector, xis::Array{A
 	HQHpR += etai * transpose(etai)
     end
     # @bp #These matrix products are good 1e-10 order: 
-    # norm(HQ-G*C)
+    #  norm(HQ-G*C)
     # norm(HQHpR-(G*C*G'+Gamma)) 
     HX = (results[end-1] - results[end-2]) / delta
     # @bp #This is 0 now, was an error here
