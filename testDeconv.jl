@@ -80,7 +80,7 @@ s_end = res.minimum;
 plot(x,s_end,linestyle="-",marker="o")
 grid("on")
 its = res.iterations
-legend(["synthetic","initial s_0","s_1","s_$its"])
+legend(["synthetic","initial s_0","s_1","s_$its"],loc= 0)
 
 title("Newton's method, total iterates = $its, noise = $noise%")
 

@@ -4,15 +4,17 @@
 using PyPlot
 
 const numparams = 30
+const noise = 4
+const delta = sqrt(eps())
 
 close("all")
 
-const EXAMPLEFLAG = 1 # 1 = deconvolution test problem
+# Which example to run PCGA on
+# 1 = deconvolution test problem
 # 2 = ellen.jl forward model
+const EXAMPLEFLAG = 2 
 
-const delta = sqrt(eps())
-
-# Inputs: 
+# Inputs into pcgaiteration 
 # forwardmodel - param to obs map
 #            s - current iterate          
 #            X - mean of parameter prior (replace with B*X drift matrix
@@ -61,18 +63,26 @@ function randSVDzetas(A; epsilon=1e-10, r=20)
     return Z
 end  
 
-const noise = 4
-
 if EXAMPLEFLAG == 1
     include("deconvolutionTestProblem.jl")
     G,strue,yvec,Gamma,C = deconv2(numparams,noise);
     Z = randSVDzetas(C); #Do random SVD on the prior part covariance matrix
 elseif EXAMPLEFLAG == 2
     include("~/codes/finitedifference2d.jl/ellen.jl")
+    testForward = forwardObsPoints
+    Gamma = R
+    strue = [truelogk1[1:end]; truelogk2[1:end]] #vectorized 2D
+    #parameter field
+    yvec = u_obsNoise #see ellen.jl for noise level
+    m = length(strue)
+    # for i = 1:m
+    #     for j = i:m
+    #         C[i,j] =  abs(x
+    #                       end
+    #                       end
 else
     println("example not supported")
 end
-
 
 # @debug function pcgaiteration(s, X, xis, R, y; forwardmodel = testForward)
 function pcgaiteration(forwardmodel::Function,s::Vector, X::Vector, xis::Array{Array{Float64, 1}, 1}, R::Matrix, y::Vector)
@@ -157,7 +167,7 @@ return sbar,relerror
 
 x = linspace(0,1,numparams);
 plot(x,strue,x,sbar[:,1],x,sbar[:,end-2],x,sbar[:,end-1],x,sbar[:,end],linestyle="-",marker="o")
-legend(["sythetic","initial s_0","s_end-2","s_end-1","s_end"])
+legend(["sythetic","initial s_0","s_end-2","s_end-1","s_end"], loc=0)
 xlabel("unit 1D domain x")
 ylabel("1D parameter field s(x)")
 title("PCGA, total iterates = $total_iter, noise = $noise%")
