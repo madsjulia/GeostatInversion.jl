@@ -4,7 +4,6 @@ using Debug
 
 
 const numparams = 30
-const noise = 4
 const delta = sqrt(eps())
 
 #close("all")
@@ -148,10 +147,24 @@ end
 
 
 #Runs the optimization loop until it converges
-const total_iter = 1;
+const total_iter = 2;
 #s0 = strue+0.05*randn(length(strue));
 #s0 = 0.5*ones(length(strue));
-s0 = zeros(length(strue));
+# s0 = zeros(length(strue));
+# mean = zeros(length(strue));
+# s0 = ones(length(strue));
+# mean = ones(length(strue));
+
+
+mean = strue + randn(length(strue));
+#choose a random smooth field in the prior to start at
+U,S = svd(Q) #assuming Q not perfectly spd
+Sh = sqrt(S)
+L = U*diagm(Sh)
+srand(1)
+s0 = mean +  L * randn(length(strue));
+
+
 relerror = Array(Float64,total_iter+1)
 sbar  = Array(Float64,length(strue),total_iter+1)
 sbar[:,1] = s0;
@@ -159,7 +172,9 @@ relerror[1] = norm(sbar[:,1]-strue)/norm(strue);
 
 for k = 1:total_iter
     #tic() 
-   sbar[:,k+1] = pcgaiteration(testForward, sbar[:,k], strue, Zis, Gamma, yvec)
+   #sbar[:,k+1] = pcgaiteration(testForward, sbar[:,k], strue, Zis,
+    #Gamma, yvec)
+    sbar[:,k+1] = pcgaiteration(testForward, sbar[:,k], mean, Zis, Gamma, yvec)
     #toc()
     relerror[k+1] = norm(sbar[:,k+1]-strue)/norm(strue);
 end
@@ -188,13 +203,46 @@ if EXAMPLEFLAG == 1
     title("Relative error vs iteration number, PCGA method")
 
 elseif EXAMPLEFLAG == 2
+    fignum  = 5    
+
+    k1mean, k2mean = x2k(mean)
+    logk_mean = ks2k(k1mean,k2mean)
+
+    k1s0,k2s0 = x2k(s0)
+    logk_s0 = ks2k(k1s0,k2s0)
+
+    k1p_i,k2p_i = x2k(sbar[:,end-1]);
+    logkp_i = ks2k(k1p_i,k2p_i);
+
     k1p,k2p = x2k(sbar[:,end]);
     logkp = ks2k(k1p,k2p);
-    fig = plt.figure(figsize=(24, 12))
-    plotfield(logk,1,2)
-    plotfield(logkp,2,2)
-    #plt.colorbar() this makes the resizing weird
+    
+    fig = plt.figure(figsize=(6*fignum, 6))    
+    
+    plotfield(logk,1,fignum)
+    plt.title("the true logk")
+
+    plotfield(logk_mean,2,fignum)
+    plt.title("the mean, here truelogk + noise")
+
+    plotfield(logk_s0,3,fignum)
+    plt.title("s0 (using prior and mean)")
+
+    plotfield(logkp_i,fignum-1,fignum)
+    plt.title("s_end-1")
+
+    plotfield(logkp,fignum,fignum)
+    plt.title("the last iterate, total_iter = $total_iter")
+
+    vmin = minimum(logk)
+    vmax = maximum(logk)
+    plt.clim(vmin, vmax)
+    #plt.colorbar() #this makes the resizing weird
+    plt.suptitle("2D example", fontsize=16)        
+
     plt.show()
+    
+  
 else
     println("example not supported")
 end
