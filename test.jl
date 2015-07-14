@@ -5,7 +5,6 @@ import PCGA
 
 
 const numparams = 30
-const delta = sqrt(eps())
 
 #close("all")
 
@@ -33,7 +32,7 @@ elseif EXAMPLEFLAG == 2
     #     this_dir = dirname(@__FILE__);
     # include(abspath(joinpath(this_dir,
     # "../finitedifference2d.jl/ellen.jl")))
-    include(abspath("../finitedifference2d.jl/ellen.jl"))
+    include("ellen.jl")
     testForward = forwardObsPoints
     Gamma = R
     strue = [truelogk1[1:end]; truelogk2[1:end]] #vectorized 2D
