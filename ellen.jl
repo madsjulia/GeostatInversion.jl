@@ -35,6 +35,8 @@ observationpoints = BlackBoxOptim.Utils.latin_hypercube_sampling([a, c], [b, d],
 observationI = Array(Int64, numobs)
 observationJ = Array(Int64, numobs)
 u_obs = Array(Float64, numobs)
+k_obs = Array(Float64, numobs)
+xy_obs = Array(Float64, (2, numobs))
 #obsweights = ones(numobs) / (numobs)
 
 #set everything up for a randomly generated k field with a power-law spectral density
@@ -83,18 +85,22 @@ trueu = forwardFullGrid([truelogk1[:]; truelogk2[:]])
 
 
 for i = 1:numobs
-
 	observationI[i] = 1 + int(round((m - 1) * (observationpoints[1, i] - a) / (b - a)))
 	observationJ[i] = 1 + int(round((n - 1) * (observationpoints[2,i] - c) / (d - c)))
 	u_obs[i] = trueu[observationI[i], observationJ[i]] 
+	k_obs[i] = truelogk1[observationI[i], observationJ[i]] 
+	xy_obs[1, i] = a + (observationI[i] - 1) * hx
+	xy_obs[2, i] = c + (observationJ[i] - 1) * hy
 end
 
 #Add gaussian noise to perfect data vector at observation points u_obs
-std_noise = maximum(abs(u_obs))*(noise/100)         
+std_noise = maximum(abs(u_obs))*(noise/100)
+k_std_noise = maximum(abs(k_obs))*(noise/100)
 R = std_noise*eye(numobs)
 
 srand(1234)
-u_obsNoise = vec(u_obs + std_noise*randn(numobs,1)) 
+u_obsNoise = vec(u_obs + std_noise*randn(numobs,1))
+k_obsNoise = vec(k_obs + k_std_noise*randn(numobs,1))
 
 
 x0 = mean_logk * ones((m + 1) * n + m * (n + 1))
@@ -130,13 +136,15 @@ coords = xyCoordsLogK(logkvect);
 
 lenCoords = length(coords)
 
+cov(h) = exp(-abs(h) / 0.3)
+
 # Make the exponential isotropic covariance function Q
 Q_up = Array(Float64, lenCoords, lenCoords)
 #fill in the upper tri part of Q then copy it over since Q symmetric
 for i = 1:lenCoords
     for j = (i+1):lenCoords
         dist = norm(collect(coords[i]) - collect(coords[j]))
-        Q_up[i,j] = exp(-abs(dist)/0.3)
+        Q_up[i,j] = cov(dist)
     end
 end
 

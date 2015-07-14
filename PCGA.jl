@@ -93,7 +93,8 @@ function pcgaiteration(forwardmodel::Function,s::Vector, X::Vector, xis::Array{A
     bigA = [HQHpR HX; transpose(HX) zeros(p, p)]
     b = [y - results[1] + Hs; zeros(p)]
     #@bp   
-    x = bigA \ b # we will replace this with a Krylov solver or something
+    #x = bigA \ b # we will replace this with a Krylov solver or something
+    x = pinv(bigA) * b
     # like UMFPACK?
     s_new = X * x[end] + (HQ)'* x[1:end-1]
     #println(s_new - s)
