@@ -3,7 +3,6 @@
 using Debug
 import PCGA
 
-
 const numparams = 30
 
 #close("all")
@@ -21,15 +20,17 @@ const EXAMPLEFLAG = 2
 #          xis - K columns of Z where Q approx= ZZ^T
 #            R - covariance of measurement error (data misfit term)
 #            y - data vector            
+
 tic()
 
 if EXAMPLEFLAG == 1
     using PyPlot
     include("deconvolutionTestProblem.jl")
-    G,strue,yvec,Gamma,C = deconv2(numparams,noise);
-    Z = randSVDzetas(C); #Do random SVD on the prior part covariance matrix
+    noise = 5  # what percent noise i.e. noise =5 means 5% of max value
+    G,strue,yvec,Gamma,Q = deconv2(numparams,noise);
+    Z = PCGA.randSVDzetas(Q); #Do random SVD on the prior part covariance matrix
 elseif EXAMPLEFLAG == 2
-    #     this_dir = dirname(@__FILE__);
+    # this_dir = dirname(@__FILE__);
     # include(abspath(joinpath(this_dir,
     # "../finitedifference2d.jl/ellen.jl")))
     include("ellen.jl")
@@ -43,16 +44,14 @@ else
     println("example not supported")
 end
 
-
 Zis = Array{Float64, 1}[Z[:,1],Z[:,2]];
 
 for i = 3:size(Z,2)
     Zis = push!(Zis,Z[:,i])
 end
 
-
 #Runs the optimization loop until it converges
-const total_iter = 2;
+const total_iter = 5;
 #s0 = strue+0.05*randn(length(strue));
 #s0 = 0.5*ones(length(strue));
 # s0 = zeros(length(strue));
@@ -60,15 +59,13 @@ const total_iter = 2;
 # s0 = ones(length(strue));
 # mean = ones(length(strue));
 
-
-mean = strue + randn(length(strue));
+mean = strue + randn(length(strue)); 
 #choose a random smooth field in the prior to start at
 U,S = svd(Q) #assuming Q not perfectly spd
 Sh = sqrt(S)
 L = U*diagm(Sh)
 srand(1)
 s0 = mean +  L * randn(length(strue));
-
 
 relerror = Array(Float64,total_iter+1)
 sbar  = Array(Float64,length(strue),total_iter+1)
@@ -86,18 +83,19 @@ end
 
 return sbar,relerror
 
-# this doesn't work need to check formation of etas
-#  norm(HQHpR-(A'*C*A+Gamma))
-# 2.059780712550066e18
-
 toc()
 rel_errPCGA = norm(sbar[:,end]-strue)/norm(strue);
 @show(rel_errPCGA)
 
 if EXAMPLEFLAG == 1
     x = linspace(0,1,numparams);
-    plot(x,strue,x,sbar[:,1],x,sbar[:,end-2],x,sbar[:,end-1],x,sbar[:,end],linestyle="-",marker="o")
-    legend(["sythetic","initial s_0","s_end-2","s_end-1","s_end"], loc=0)
+    # plot(x,strue,x,sbar[:,1],x,sbar[:,end-2],x,sbar[:,end-1],x,sbar[:,end],linestyle="-",marker="o")
+    # legend(["sythetic","initial s_0","s_end-2","s_end-1","s_end"], loc=0)
+   
+    plot(x,strue,x,mean,x,sbar[:,1],x,sbar[:,end],linestyle="-",marker="o")
+    legend(["sythetic","s_mean (perturbed truth)","initial s_0","s_end"], loc=0)
+
+
     xlabel("unit 1D domain x")
     ylabel("1D parameter field s(x)")
     title("PCGA, total iterates = $total_iter, noise = $noise%")
@@ -145,8 +143,7 @@ elseif EXAMPLEFLAG == 2
     #plt.colorbar() #this makes the resizing weird
     plt.suptitle("2D example", fontsize=16)        
 
-    plt.show()
-    
+    plt.show()    
   
 else
     println("example not supported")

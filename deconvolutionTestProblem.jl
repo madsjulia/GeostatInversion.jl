@@ -34,8 +34,10 @@ function deconv2(n,noise)
 
 
     # Truth u = u(t), discretized at pts in the mesh, that we want to recover
-    utrue = -1.6*sin(2*pi*t);
 
+    utrue = 10*(t-0.5).*exp(-0.5*1e2*(t-0.5).^2) -0.8 + 1.6*t;
+    # utrue = -1.6*sin(2*pi*t);
+ 
     ## ------------Add noise to truth to create data-----------
 
     y0 = G*utrue;    # Noiseless signal - true value in the absence of errorm
@@ -83,6 +85,9 @@ function deconv2(n,noise)
     #multiply times n to make C more important
     C = n *(gamma^2) * inv(L'*L);
     y = vec(y)
+
+
+
     return G,utrue,y,Gamma,C
 end
 

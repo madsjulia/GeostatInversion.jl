@@ -35,7 +35,6 @@ function rangefinder(A; epsilon=1e-10, r=20)#implements algorithm 4.2 in halko e
     return Q
 end
 
-#Problem: rangefinder giving a matrix of size (840 by 0) when inputting C
 function randSVDzetas(A; epsilon=1e-10, r=15)
     Q = rangefinder(A; epsilon=1e-10, r=15);
     B = Q' * A;
