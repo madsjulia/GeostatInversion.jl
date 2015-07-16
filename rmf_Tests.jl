@@ -1,5 +1,7 @@
 # Ellen Le June 8-July 14, 2015
 # implements some random matrix factorization techniques
+# some code stolen from Mark Tygert's Matlab implementation of
+# randomized PCA
 # Ref: rmf.jl in randommatrixfactorization repo and Halko paper
 using HDF5, JLD
 SAVEDQ_FLAG = 2
@@ -9,15 +11,45 @@ SAVEDQ_FLAG = 2
 # Use for when you want to specify the rank of the decomposition. For
 # specifying the accuracy, use Algo 4.2 instead
 # If you want a rank k, choose l = k + p where p = 5,10,15
+# To do power iterations, change q, otherwise set q =0
 
-function rangefinder1(A,l)
+function rangefinder1(A,l,its)
     srand(1)
     m = size(A, 1)
     n = size(A, 2)
     Omega = randn(n, l) #Gaussian requires less oversampling but is more
     #costly to construct, see sect 4.6 Halko
     Y = A*Omega
-    Q,R = qr(Y)
+
+    if its == 0
+        Q,R,() = qr(Y,pivot = true); #pivoted QR is more numerically
+        #stable
+    end
+    
+    if its > 0
+        Q,R = lu(Y)
+    end
+
+#   Conduct normalized power iterations.
+#
+    for it = 1:its
+
+      Q = (Q'*A)';
+
+      Q,R = lu(Q);
+
+      Q = A*Q;
+
+      if it < its
+        Q,R = lu(Q);
+      end
+
+      if it == its
+        Q,R,() = qr(Q,pivot = true);
+      end
+
+    end
+
     return Q
 end
 
@@ -50,15 +82,15 @@ if SAVEDQ_FLAG == 1
     Q = load("pcga.jl/ellenQ.jld","Q");
     Z = load("pcga.jl/ellenQ.jld","Z");
 elseif SAVEDQ_FLAG == 2
-    include(abspath("./pcga.jl/ellen.jl"))
+    include("ellen.jl")
 else
     println("check Q")
 end
 @show(rank(Q))
 
-p = 20 #change p here and in the line below
-function randSVDzetas(A,K; p = 20)
-    Q = rangefinder1(A,K+p);
+p = 20; q=0; #change p and q here and in the line below
+function randSVDzetas(A,K; p = 20, q=0)
+    Q = rangefinder1(A,K+p,q);
     B = Q' * A;      # 
     U,S,V = svd(B); #This is algorithm 5.1, Direct SVD
     Sh = diagm(sqrt([S[1:K];zeros(p)])) #Oversample by p
@@ -96,8 +128,8 @@ figure()
 plot(ranks,relerr_a,ranks,relerr_b,marker="o")
 xlabel("RANK (of basis for approximate range of Q and approx rank of decomposition)")
 ylabel("RELATIVE ERROR ||Q-Z*Z'||/||Q||")
-title("Rank of approximation versus error with p=$(p)")
-legend(["approximation error with oversampling parameter p=$(p) ", "true relative error of best rank k
+title("Rank of approximation versus error with p=$(p), q=$(q)")
+legend(["approximation error with p=$(p),q=$(q) ", "true relative error of best rank k
         approx"],loc = "best")
 
 tic()
@@ -107,15 +139,7 @@ time_approxrankK = toq()
 relerror_bestrankK = norm(Q-Z1*Z1')/norm(Q)
 relerror_approxrankK = norm(Q-Z2*Z2')/norm(Q)
 
-@show(p)
-@show(rank(Z1))
-@show(relerror_bestrankK)
-@show(time_bestrankK)
-
-@show(rank(Z2))
-@show(relerror_approxrankK)
-@show(time_approxrankK)
-
+@show(p,q,rank(Z1),relerror_bestrankK,time_bestrankK,rank(Z2),relerror_approxrankK,time_approxrankK)
 timespeedup = time_bestrankK/time_approxrankK
 @show(timespeedup)
 

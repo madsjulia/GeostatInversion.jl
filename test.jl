@@ -95,7 +95,8 @@ if EXAMPLEFLAG == 1
     # legend(["sythetic","initial s_0","s_end-2","s_end-1","s_end"], loc=0)
    
     plot(x,strue,x,mean_s,x,sbar[:,1],x,sbar[:,end],linestyle="-",marker="o")
-    legend(["sythetic","s_mean (perturbed truth)","initial s_0","s_end"], loc=0)
+    legend(["sythetic","s_mean","initial s_0 (a random field in the
+    prior probability distribution)","s_end"], loc=0)
 
 
     xlabel("unit 1D domain x")
