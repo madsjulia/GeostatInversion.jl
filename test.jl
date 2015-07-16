@@ -10,7 +10,7 @@ const numparams = 30
 # Which example to run PCGA on
 # 1 = deconvolution test problem
 # 2 = ellen.jl forward model
-const EXAMPLEFLAG = 2 
+const EXAMPLEFLAG = 1 
 
 # Inputs into pcgaiteration 
 # forwardmodel - param to obs map
@@ -54,18 +54,20 @@ end
 const total_iter = 5;
 #s0 = strue+0.05*randn(length(strue));
 #s0 = 0.5*ones(length(strue));
-# s0 = zeros(length(strue));
 # mean = zeros(length(strue));
 # s0 = ones(length(strue));
 # mean = ones(length(strue));
 
-mean = strue + randn(length(strue)); 
+mean_s = zeros(length(strue));
+
+#mean = strue + randn(length(strue));
+ 
 #choose a random smooth field in the prior to start at
 U,S = svd(Q) #assuming Q not perfectly spd
 Sh = sqrt(S)
 L = U*diagm(Sh)
 srand(1)
-s0 = mean +  L * randn(length(strue));
+s0 = mean_s + 0.1* L * randn(length(strue));
 
 relerror = Array(Float64,total_iter+1)
 sbar  = Array(Float64,length(strue),total_iter+1)
@@ -76,7 +78,7 @@ for k = 1:total_iter
     #tic() 
    #sbar[:,k+1] = pcgaiteration(testForward, sbar[:,k], strue, Zis,
     #Gamma, yvec)
-    sbar[:,k+1] = PCGA.pcgaiteration(testForward, sbar[:,k], mean, Zis, Gamma, yvec)
+    sbar[:,k+1] = PCGA.pcgaiteration(testForward, sbar[:,k], mean_s, Zis, Gamma, yvec)
     #toc()
     relerror[k+1] = norm(sbar[:,k+1]-strue)/norm(strue);
 end
@@ -92,7 +94,7 @@ if EXAMPLEFLAG == 1
     # plot(x,strue,x,sbar[:,1],x,sbar[:,end-2],x,sbar[:,end-1],x,sbar[:,end],linestyle="-",marker="o")
     # legend(["sythetic","initial s_0","s_end-2","s_end-1","s_end"], loc=0)
    
-    plot(x,strue,x,mean,x,sbar[:,1],x,sbar[:,end],linestyle="-",marker="o")
+    plot(x,strue,x,mean_s,x,sbar[:,1],x,sbar[:,end],linestyle="-",marker="o")
     legend(["sythetic","s_mean (perturbed truth)","initial s_0","s_end"], loc=0)
 
 
@@ -108,7 +110,7 @@ if EXAMPLEFLAG == 1
 elseif EXAMPLEFLAG == 2
     fignum  = 5    
 
-    k1mean, k2mean = x2k(mean)
+    k1mean, k2mean = x2k(mean_s)
     logk_mean = ks2k(k1mean,k2mean)
 
     k1s0,k2s0 = x2k(s0)

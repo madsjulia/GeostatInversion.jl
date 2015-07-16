@@ -29,7 +29,8 @@ else
     println("example not supported")
 end
 
-#s0 = strue + 0.5*randn(length(strue))+1;
+#s0 = strue + randn(length(strue));
+
 s0 = zeros(length(strue));
 
 #choose a random smooth field around 0
@@ -109,10 +110,11 @@ if EXAMPLEFLAG == 1
 
     figure()
     tol = 1e-15
-    meth =: newton #cg, l_bfgs, bfgs, gradient_descent,
+    meth =: l_bfgs #newton #cg, l_bfgs, bfgs, gradient_descent,
     #momentum_gradient descent
     res = optimize(f, g!, h!, s0, method = meth, ftol = tol, grtol = tol, iterations = 1) 
     s1 = res.minimum;
+    x = linspace(0,1,numparams);   
     plot(x,strue,x,s0,linestyle="-",marker="o")
     plot(x,s1,linestyle="-",marker="o")
 
