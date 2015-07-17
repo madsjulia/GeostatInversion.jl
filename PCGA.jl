@@ -1,6 +1,23 @@
 module PCGA
-#Definetly not array optimized
 using Debug
+
+# Julia implementation of PCGA, a method for solving the
+# subsurface inverse problems using a randomized low rank approximation of
+# the prior covariance, and a finite difference approximation of the
+# gradient. No adjoints, gradients, or Hessians required.  
+# Last updated July 17, 2015 by Ellen Le
+# Questions: ellenble@gmail.com
+
+# References: 
+# Jonghyun Lee and Peter K. Kitanidis, 
+# Large-Scale Hydraulic Tomography and Joint Inversion of Head and
+# Tracer Data using the Principal Component Geostatistical Approach
+# (PCGA), 
+# Water Resources Research, 50(7): 5410-5427, 2014
+# Peter K. Kitanidis and Jonghyun Lee, 
+# Principal Component Geostatistical Approach for Large-Dimensional
+# Inverse Problem, 
+# Water Resources Research, 50(7): 5428-5443, 2014
 
 const delta = sqrt(eps())
 
@@ -12,56 +29,68 @@ function colnorms(Y)
     return norms
 end
 
-function rangefinder(A; epsilon=1e-10, r=20)#implements algorithm 4.2 in halko et al
+function rangefinder(A,l,its)
+    srand(1)
     m = size(A, 1)
     n = size(A, 2)
-    Omega = randn(n, r)
-    Y = A * Omega
-    j = 0
-    Q = Array(Float64, m, 0)
-    while max(colnorms(Y[:, j+1:j+r])...) > epsilon / sqrt(200 / pi)
-	j = j + 1
-	Y[:, j] = (eye(m) - Q * ctranspose(Q)) * Y[:, j]
-	q = Y[:, j] / norm(Y[:, j])
-	Q = [Q q]
+    Omega = randn(n, l) #Gaussian requires less oversampling but is more
+    #costly to construct, see sect 4.6 Halko
+    Y = A*Omega
 
-	Omega = [Omega randn(n)]
-	ynew = (eye(m) - Q * ctranspose(Q)) * A * Omega[:, j + r]
-	Y = [Y ynew]
-	for i = j + 1:j + r - 1
-	    Y[:, i] = Y[:, i] - Q[:, j] * dot(Q[:, j], Y[:, i])
-	end
+    if its == 0
+        Q,R,() = qr(Y,pivot = true); #pivoted QR is more numerically
+        #stable
     end
+    
+    if its > 0
+        Q,R = lu(Y)
+    end
+
+#   Conduct normalized power iterations.
+#
+    for it = 1:its
+
+      Q = (Q'*A)';
+
+      Q,R = lu(Q);
+
+      Q = A*Q;
+
+      if it < its
+        Q,R = lu(Q);
+      end
+
+      if it == its
+        Q,R,() = qr(Q,pivot = true);
+      end
+
+    end
+
     return Q
 end
 
-function randSVDzetas(A; epsilon=1e-10, r=15)
-    Q = rangefinder(A; epsilon=1e-10, r=15);
-    B = Q' * A;
-    (),S,V = svd(B);
-    Sh = diagm(sqrt(S))
+function randSVDzetas(A,K,p,q)
+    Q = rangefinder(A,K+p,q);
+    B = Q' * A;      # 
+    (),S,V = svd(B); #This is algorithm 5.1, Direct SVD
+    Sh = diagm(sqrt([S[1:K];zeros(p)])) # Cut back to K from K+p
     Z = V*Sh 
     return Z
 end  
 
-# @debug function pcgaiteration(s, X, xis, R, y; forwardmodel = testForward)
 function pcgaiteration(forwardmodel::Function,s::Vector, X::Vector, xis::Array{Array{Float64, 1}, 1}, R::Matrix, y::Vector)
     # Inputs: 
     # forwardmodel - param to obs map h(s)
     #            s - current iterate s_k or sbar          
     #            X - mean of parameter prior (replace with B*X drift matrix
     # later for p>1)
-    #          xis - K columns of Z where Q approx= ZZ^T, get this by doing
-    #          random SVD on your prior covariance matrix and save the
-    #          columns in a list xis = [col1,col2,....]
+    #          xis - K columns of Z = randSVDzetas(Q,K,p,q) where Q approx= ZZ^T
     #            R - covariance of measurement error (data misfit term)
     #            y - data vector
-    #tic()     
     global delta
     p = 1
     K = length(xis)
     m = length(xis[1])
-    #paramstorun = Array{Float64, 1}[s .+ delta .* xis,{s,s + delta * X, s + delta * s}]
     paramstorun = Array(Array{Float64, 1}, length(xis) + 3)
     for i = 1:length(xis)
 	paramstorun[i] = s + delta * xis[i]
@@ -71,33 +100,20 @@ function pcgaiteration(forwardmodel::Function,s::Vector, X::Vector, xis::Array{A
     paramstorun[length(xis) + 3] = s + delta * s
     results = pmap(forwardmodel, paramstorun)
     n = length(results[1])
-    # etai = Array(Float64, m)   
     HQHpR = R
     HQ = zeros(n, m)
     for i = 1:K
 	etai = (results[i] - results[K+1]) / delta
-        #toc()
-        #@bp
-	HQ += etai * transpose(xis[i])
+       	HQ += etai * transpose(xis[i])
 	HQHpR += etai * transpose(etai)
     end
-    # @bp #These matrix products are good 1e-10 order: 
-    #  norm(HQ-G*C)
-    # norm(HQHpR-(G*C*G'+Gamma)) 
     HX = (results[end-1] - results[end-2]) / delta
-    # @bp #This is 0 now, was an error here
-    # norm(forwardmodel(X)-HX)/norm(forwardmodel(X))
     Hs = (results[end] - results[K+1]) / delta
-    # @bp
     bigA = [HQHpR HX; transpose(HX) zeros(p, p)]
     b = [y - results[1] + Hs; zeros(p)]
-    #@bp   
-    #x = bigA \ b # we will replace this with a Krylov solver or something
     x = pinv(bigA) * b
-    # like UMFPACK?
     s_new = X * x[end] + (HQ)'* x[1:end-1]
-    #println(s_new - s)
-    return s_new #HQ,HQHpR
+    return s_new 
 end
 
 end

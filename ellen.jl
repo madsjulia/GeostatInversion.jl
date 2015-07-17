@@ -1,11 +1,15 @@
 import FiniteDifference2D
 import FFTRF
 import BlackBoxOptim
-using PyCall
-#import PyCall
-# using Debug
-#@PyCall.pyimport matplotlib.pyplot as plt
-@pyimport matplotlib.pyplot as plt
+# using PyCall
+# @pyimport matplotlib.pyplot as plt
+using PyPlot
+
+# Forward model, covariance matrix, and helper functions for the 2D
+# groundwater example for PCGA, called by test.jl
+# Dan O'Malley
+# Last updated July 17, 2015 by Ellen Le
+# Questions: omalled@lanl.gov, ellenble@gmail.com
 
 srand(0)
 
@@ -207,14 +211,26 @@ function ks2k(k1::Matrix, k2::Matrix) #puts them back into the field
 	return k
 end
 
+# function plotfield(field,fignum,totfignum)
+#     plt.subplot(1,totfignum,fignum)
+#     #plt.figure(fignum)
+#     plt.imshow(transpose(field), extent=[c, d, a, b], interpolation="nearest")
+#     #plt.clim(0, 2)
+#     #plt.colorbar()
+#     for i = 1:numobs
+# 	plt.plot(observationpoints[1, i], observationpoints[2, i], ".", color="#E0B0FF")
+#     end
+#     #plt.show()
+# end
+
 function plotfield(field,fignum,totfignum)
-    plt.subplot(1,totfignum,fignum)
+    subplot(1,totfignum,fignum)
     #plt.figure(fignum)
-    plt.imshow(transpose(field), extent=[c, d, a, b], interpolation="nearest")
+    imshow(transpose(field), extent=[c, d, a, b], interpolation="nearest")
     #plt.clim(0, 2)
     #plt.colorbar()
     for i = 1:numobs
-	plt.plot(observationpoints[1, i], observationpoints[2, i], ".", color="#E0B0FF")
+	plot(observationpoints[1, i], observationpoints[2, i], ".", color="#E0B0FF")
     end
     #plt.show()
 end

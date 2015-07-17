@@ -1,8 +1,9 @@
 using Debug
 import PCGA
+
 const EXAMPLEFLAG = 1 
 
-# This runs tests for module PCGA.jl on 2 examples
+# Driver for tests using module PCGA.jl. 2 examples available.
 # Set:
 # EXAMPLEFLAG = 1  for 1D deconvolution test problem
 # EXAMPLEFLAG = 2  for 2D groundwater forward model
@@ -21,26 +22,30 @@ const EXAMPLEFLAG = 1
 # Inverse Problem, 
 # Water Resources Research, 50(7): 5428-5443, 2014
 
-const numparams = 30
-
-tic()
+const p = 20 # The oversampling parameter for increasing RSVD accuracy
+const q = 3 # Number of power iterations in the RSVD
 
 if EXAMPLEFLAG == 1
     using PyPlot
     include("deconvolutionTestProblem.jl")
-    noise = 5  #  noise = 5 means 5% of max value
+    const noise = 5  #  noise = 5 means 5% of max value
+    const numparams = 30
     G,strue,yvec,Gamma,Q = deconv2(numparams,noise);
-    Z = PCGA.randSVDzetas(Q); # Random SVD on the prior part covariance matrix
+    Z = PCGA.randSVDzetas(Q,K,p,q); # Random SVD on the prior part covariance matrix
 elseif EXAMPLEFLAG == 2
     include("ellen.jl")
     testForward = forwardObsPoints
     Gamma = R
-    strue = [truelogk1[1:end]; truelogk2[1:end]] #vectorized 2D parameter field
+    strue = [truelogk1[:]; truelogk2[:]] #vectorized 2D parameter field
     yvec = u_obsNoise # see ellen.jl for noise level
-    Z = PCGA.randSVDzetas(Q) 
+    Z = PCGA.randSVDzetas(Q,K,p,q) 
+    numparams = length(strue) 
 else
     println("example not supported")
 end
+
+# Set the rank of the RSVD for Q
+const K = ceil(numparams/7) # Ex 1 K = 5, Ex 2 K = 120 
 
 Zis = Array{Float64, 1}[Z[:,1],Z[:,2]];
 
@@ -65,17 +70,18 @@ sbar  = Array(Float64,length(strue),total_iter+1)
 sbar[:,1] = s0;
 relerror[1] = norm(sbar[:,1]-strue)/norm(strue);
 
+tic()
+
 for k = 1:total_iter
     sbar[:,k+1] = PCGA.pcgaiteration(testForward, sbar[:,k], mean_s, Zis, Gamma, yvec)
     relerror[k+1] = norm(sbar[:,k+1]-strue)/norm(strue);
 end
 
-return sbar,relerror
-
 totaltime_PCGA = toq() 
 
+rank_QK = rank(Z*Z')
 rel_errPCGA = norm(sbar[:,end]-strue)/norm(strue);
-@show(total_iter,rel_errPCGA, totaltime_PCGA)
+@show(total_iter,rel_errPCGA, totaltime_PCGA, rank_QK)
 
 # Plotting for each example
 if EXAMPLEFLAG == 1
@@ -110,7 +116,9 @@ elseif EXAMPLEFLAG == 2
     k1p,k2p = x2k(sbar[:,end]);
     logkp = ks2k(k1p,k2p);
     
-    fig = plt.figure(figsize=(6*fignum, 6))    
+@bp
+    fig = plt.figure(figsize=(6*fignum, 6)) 
+    
     
     plotfield(logk,1,fignum)
     plt.title("the true logk")

@@ -1,19 +1,27 @@
-# Ellen Le June 8-July 14, 2015
-# implements some random matrix factorization techniques
-# some code stolen from Mark Tygert's Matlab implementation of
-# randomized PCA
-# Ref: rmf.jl in randommatrixfactorization repo and Halko paper
 using HDF5, JLD
+
 SAVEDQ_FLAG = 2
 
-# Algo 4.1 Range Finder - finds an orthonormal basis with l columns to
-# approx. range of A - p 240
-# Use for when you want to specify the rank of the decomposition. For
-# specifying the accuracy, use Algo 4.2 instead
-# If you want a rank k, choose l = k + p where p = 5,10,15
-# To do power iterations, change q, otherwise set q =0
+# Implements and tests random matrix factorization techniques in Halko
+# et al, modified for PCGA.
+# Some code stolen from Mark Tygert's Matlab implementation of
+# randomized PCA
+# Last updated July 17, 2015 by Ellen Le
+#
+#   Reference:
+#   Nathan Halko, Per-Gunnar Martinsson, and Joel Tropp,
+#   Finding structure with randomness: probabilistic algorithms
+#   for constructing approximate matrix decompositions,
+#   arXiv:0909.4061 [math.NA; math.PR], 2009
+#   (available at http://arxiv.org).
 
 function rangefinder1(A,l,its)
+# Finds an orthonormal basis with l columns to approx. range of A - 
+# Algo 4.1 p 240 in Halko
+# Use for when you want to specify the rank of the decomposition. 
+# For specifying the accuracy, use Algo 4.2 instead
+# If you want a rank k, choose l = k + p where p = 5,10,15
+# To do power iterations, change q, otherwise set q = 0
     srand(1)
     m = size(A, 1)
     n = size(A, 2)
@@ -54,7 +62,7 @@ function rangefinder1(A,l,its)
 end
 
 srand(1)
-#Creates a random nxn input matrix A of rank m. Tests Algo 4.1 with oversampling p=10.
+#Creates a random nxn input matrix A of rank m. Tests Algo 4.1 with oversampling p.
 function test_rangefinder(n, m)
     A = Array(Float64, (n, n))
     range = randn(n, m)
@@ -73,11 +81,10 @@ function test_rangefinder(n, m)
     println("4.1: time for this algorithm is $(saveTime) seconds")
 end
 
-
-# See what rank we need
+## Below are test to see what rank K is optimal for the 2D problem
 lenCoords = 840
 
-#Load the Q from the 2D problem
+# Load the Q from the 2D problem
 if SAVEDQ_FLAG == 1
     Q = load("pcga.jl/ellenQ.jld","Q");
     Z = load("pcga.jl/ellenQ.jld","Z");

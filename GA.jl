@@ -1,15 +1,28 @@
-#module GA
-#Definetly not array optimized
-#using Debug
 using PyPlot
 
+const EXAMPLEFLAG = 2 
+
+# Runs tests for GA, the full Gauss-Newton method approximated by PCGA. 
+# 2 examples available.
+# Set:
+# EXAMPLEFLAG = 1  for 1D deconvolution test problem
+# EXAMPLEFLAG = 2  for 2D groundwater forward model
+
+# Last updated July 17, 2015 by Ellen Le
+# Questions: ellenble@gmail.com
+
+# References: 
+# Jonghyun Lee and Peter K. Kitanidis, 
+# Large-Scale Hydraulic Tomography and Joint Inversion of Head and
+# Tracer Data using the Principal Component Geostatistical Approach
+# (PCGA), 
+# Water Resources Research, 50(7): 5410-5427, 2014
+# Peter K. Kitanidis and Jonghyun Lee, 
+# Principal Component Geostatistical Approach for Large-Dimensional
+# Inverse Problem, 
+# Water Resources Research, 50(7): 5428-5443, 2014
+
 const numparams = 30
-
-close("all")
-
-const EXAMPLEFLAG = 1 # 1 = deconvolution test problem
-# 2 = ellen.jl forward model
-
 const noise = 4
 
 if EXAMPLEFLAG == 1
@@ -23,8 +36,6 @@ else
     println("example not supported")
 end
 
-
-# @debug function pcgaiteration(s, X, xis, R, y; forwardmodel = testForward)
 function gaiteration(forwardmodel::Function,s::Vector, X::Vector, Q::Matrix, R::Matrix, y::Vector,H::Matrix)
     # Inputs: 
     # forwardmodel - param to obs map h(s)
@@ -47,31 +58,25 @@ function gaiteration(forwardmodel::Function,s::Vector, X::Vector, Q::Matrix, R::
     x = bigA \ b # we will replace this with a Krylov solver or something
     # like UMFPACK?
     s_new = X * x[end] + Q*H' * x[1:end-1]
-#	println(s_new - s)
-    return s_new #, HQ,HQHpR
+    return s_new 
 end
 
-
-#Runs the optimization loop until it converges
+#Run the optimization loop until it converges or a total_iter number of times
 const total_iter = 200;
-#s0 = strue+0.05*randn(length(strue));
-#s0 = 0.5*ones(length(strue));
 s0 = zeros(length(strue));
 relerror = Array(Float64,total_iter+1)
 sbar  = Array(Float64,length(strue),total_iter+1)
 sbar[:,1] = s0;
 relerror[1] = norm(sbar[:,1]-strue)/norm(strue);
 
+tic()
 for k = 1:total_iter
     sbar[:,k+1] = gaiteration(testForward, sbar[:,k], strue, C, Gamma, yvec,G)
     relerror[k+1] = norm(sbar[:,k+1]-strue)/norm(strue);
 end
+time_GA = toq()
 
 return sbar,relerror
-
-# this doesn't work need to check formation of etas
-#  norm(HQHpR-(A'*C*A+Gamma))
-# 2.059780712550066e18
 
 x = linspace(0,1,numparams);
 plot(x,strue,x,sbar[:,1],x,sbar[:,end-2],x,sbar[:,end-1],x,sbar[:,end],linestyle="-",marker="o")
@@ -86,3 +91,4 @@ plot(1:total_iter+1,relerror,linestyle="-",marker="o")
 title("Relative error vs iteration number, GA method")
 
 relErrGA = norm(sbar[:,end]-strue)/norm(strue)
+@show(relErrGA,time_GA,total_iter)
