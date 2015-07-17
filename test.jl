@@ -1,44 +1,42 @@
-#module PCGA
-#Definetly not array optimized
 using Debug
 import PCGA
-
-const numparams = 30
-
-#close("all")
-
-# Which example to run PCGA on
-# 1 = deconvolution test problem
-# 2 = ellen.jl forward model
 const EXAMPLEFLAG = 1 
 
-# Inputs into pcgaiteration 
-# forwardmodel - param to obs map
-#            s - current iterate          
-#            X - mean of parameter prior (replace with B*X drift matrix
-# later for p>1)
-#          xis - K columns of Z where Q approx= ZZ^T
-#            R - covariance of measurement error (data misfit term)
-#            y - data vector            
+# This runs tests for module PCGA.jl on 2 examples
+# Set:
+# EXAMPLEFLAG = 1  for 1D deconvolution test problem
+# EXAMPLEFLAG = 2  for 2D groundwater forward model
+
+# Last updated July 17, 2015 by Ellen Le
+# Questions: ellenble@gmail.com
+#
+# References: 
+# Jonghyun Lee and Peter K. Kitanidis, 
+# Large-Scale Hydraulic Tomography and Joint Inversion of Head and
+# Tracer Data using the Principal Component Geostatistical Approach
+# (PCGA), 
+# Water Resources Research, 50(7): 5410-5427, 2014
+# Peter K. Kitanidis and Jonghyun Lee, 
+# Principal Component Geostatistical Approach for Large-Dimensional
+# Inverse Problem, 
+# Water Resources Research, 50(7): 5428-5443, 2014
+
+const numparams = 30
 
 tic()
 
 if EXAMPLEFLAG == 1
     using PyPlot
     include("deconvolutionTestProblem.jl")
-    noise = 5  # what percent noise i.e. noise =5 means 5% of max value
+    noise = 5  #  noise = 5 means 5% of max value
     G,strue,yvec,Gamma,Q = deconv2(numparams,noise);
-    Z = PCGA.randSVDzetas(Q); #Do random SVD on the prior part covariance matrix
+    Z = PCGA.randSVDzetas(Q); # Random SVD on the prior part covariance matrix
 elseif EXAMPLEFLAG == 2
-    # this_dir = dirname(@__FILE__);
-    # include(abspath(joinpath(this_dir,
-    # "../finitedifference2d.jl/ellen.jl")))
     include("ellen.jl")
     testForward = forwardObsPoints
     Gamma = R
-    strue = [truelogk1[1:end]; truelogk2[1:end]] #vectorized 2D
-    #parameter field
-    yvec = u_obsNoise #see ellen.jl for noise level
+    strue = [truelogk1[1:end]; truelogk2[1:end]] #vectorized 2D parameter field
+    yvec = u_obsNoise # see ellen.jl for noise level
     Z = PCGA.randSVDzetas(Q) 
 else
     println("example not supported")
@@ -50,17 +48,10 @@ for i = 3:size(Z,2)
     Zis = push!(Zis,Z[:,i])
 end
 
-#Runs the optimization loop until it converges
+#Run the optimization loop until it converges or a total_iter number of times
 const total_iter = 5;
-#s0 = strue+0.05*randn(length(strue));
-#s0 = 0.5*ones(length(strue));
-# mean = zeros(length(strue));
-# s0 = ones(length(strue));
-# mean = ones(length(strue));
 
 mean_s = zeros(length(strue));
-
-#mean = strue + randn(length(strue));
  
 #choose a random smooth field in the prior to start at
 U,S = svd(Q) #assuming Q not perfectly spd
@@ -75,24 +66,20 @@ sbar[:,1] = s0;
 relerror[1] = norm(sbar[:,1]-strue)/norm(strue);
 
 for k = 1:total_iter
-    #tic() 
-   #sbar[:,k+1] = pcgaiteration(testForward, sbar[:,k], strue, Zis,
-    #Gamma, yvec)
     sbar[:,k+1] = PCGA.pcgaiteration(testForward, sbar[:,k], mean_s, Zis, Gamma, yvec)
-    #toc()
     relerror[k+1] = norm(sbar[:,k+1]-strue)/norm(strue);
 end
 
 return sbar,relerror
 
-toc()
-rel_errPCGA = norm(sbar[:,end]-strue)/norm(strue);
-@show(rel_errPCGA)
+totaltime_PCGA = toq() 
 
+rel_errPCGA = norm(sbar[:,end]-strue)/norm(strue);
+@show(total_iter,rel_errPCGA, totaltime_PCGA)
+
+# Plotting for each example
 if EXAMPLEFLAG == 1
     x = linspace(0,1,numparams);
-    # plot(x,strue,x,sbar[:,1],x,sbar[:,end-2],x,sbar[:,end-1],x,sbar[:,end],linestyle="-",marker="o")
-    # legend(["sythetic","initial s_0","s_end-2","s_end-1","s_end"], loc=0)
    
     plot(x,strue,x,mean_s,x,sbar[:,1],x,sbar[:,end],linestyle="-",marker="o")
     legend(["sythetic","s_mean","initial s_0 (a random field in the
