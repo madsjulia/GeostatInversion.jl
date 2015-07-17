@@ -29,7 +29,7 @@ function colnorms(Y)
     return norms
 end
 
-function rangefinder(A,l,its)
+function rangefinder(A::Matrix,l::Int64,its::Int64)
     srand(1)
     m = size(A, 1)
     n = size(A, 2)
@@ -69,7 +69,7 @@ function rangefinder(A,l,its)
     return Q
 end
 
-function randSVDzetas(A,K,p,q)
+function randSVDzetas(A::Matrix,K::Int64,p::Int64,q::Int64)
     Q = rangefinder(A,K+p,q);
     B = Q' * A;      # 
     (),S,V = svd(B); #This is algorithm 5.1, Direct SVD

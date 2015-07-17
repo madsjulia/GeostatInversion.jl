@@ -22,8 +22,8 @@ const EXAMPLEFLAG = 1
 # Inverse Problem, 
 # Water Resources Research, 50(7): 5428-5443, 2014
 
-const p = 20 # The oversampling parameter for increasing RSVD accuracy
-const q = 3 # Number of power iterations in the RSVD
+#Run the optimization loop until it converges or a total_iter number of times
+const total_iter = 3;
 
 if EXAMPLEFLAG == 1
     using PyPlot
@@ -31,6 +31,12 @@ if EXAMPLEFLAG == 1
     const noise = 5  #  noise = 5 means 5% of max value
     const numparams = 30
     G,strue,yvec,Gamma,Q = deconv2(numparams,noise);
+
+    const p = 15 # The oversampling parameter for increasing RSVD accuracy
+    const q = 3 # Number of power iterations in the RSVD
+    const K = 5 # Set the rank of the RSVD for Q, take i.e. K =
+                # ceil(length(strue)/7) 
+
     Z = PCGA.randSVDzetas(Q,K,p,q); # Random SVD on the prior part covariance matrix
 elseif EXAMPLEFLAG == 2
     include("ellen.jl")
@@ -38,23 +44,23 @@ elseif EXAMPLEFLAG == 2
     Gamma = R
     strue = [truelogk1[:]; truelogk2[:]] #vectorized 2D parameter field
     yvec = u_obsNoise # see ellen.jl for noise level
+
+    const p = 20 # The oversampling parameter for increasing RSVD accuracy
+    const q = 3 # Number of power iterations in the RSVD
+    const K = 120 # Set the rank of the RSVD for Q, take i.e. K =
+                  # ceil(length(strue)/7) 
+
     Z = PCGA.randSVDzetas(Q,K,p,q) 
     numparams = length(strue) 
 else
     println("example not supported")
 end
 
-# Set the rank of the RSVD for Q
-const K = ceil(numparams/7) # Ex 1 K = 5, Ex 2 K = 120 
-
 Zis = Array{Float64, 1}[Z[:,1],Z[:,2]];
 
 for i = 3:size(Z,2)
     Zis = push!(Zis,Z[:,i])
 end
-
-#Run the optimization loop until it converges or a total_iter number of times
-const total_iter = 5;
 
 mean_s = zeros(length(strue));
  
@@ -81,7 +87,7 @@ totaltime_PCGA = toq()
 
 rank_QK = rank(Z*Z')
 rel_errPCGA = norm(sbar[:,end]-strue)/norm(strue);
-@show(total_iter,rel_errPCGA, totaltime_PCGA, rank_QK)
+@show(total_iter,rel_errPCGA, totaltime_PCGA, rank_QK,p,q)
 
 # Plotting for each example
 if EXAMPLEFLAG == 1
@@ -89,12 +95,14 @@ if EXAMPLEFLAG == 1
    
     plot(x,strue,x,mean_s,x,sbar[:,1],x,sbar[:,end],linestyle="-",marker="o")
     legend(["sythetic","s_mean","initial s_0 (a random field in the
-    prior probability distribution)","s_end"], loc=0)
+    prior probability distribution)","s_$(total_iter)"], loc=0)
 
 
     xlabel("unit 1D domain x")
     ylabel("1D parameter field s(x)")
-    title("PCGA, total iterates = $total_iter, noise = $noise%")
+    rounderr =  round(rel_errPCGA*10000)/10000
+    title("PCGA, total iterates=$total_iter, noise=$noise%,
+    rank=$(rank_QK), p=$(p), q=$(q), relerr=$(rounderr)")
     grid("on")
 
     figure(2)
