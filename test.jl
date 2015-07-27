@@ -1,12 +1,11 @@
-using Debug
 import PCGA
 
-const EXAMPLEFLAG = 1 
+const EXAMPLEFLAG = 2 
 
 # Driver for tests using module PCGA.jl. 2 examples available.
 # Set:
-# EXAMPLEFLAG = 1  for 1D deconvolution test problem
-# EXAMPLEFLAG = 2  for 2D groundwater forward model
+# EXAMPLEFLAG = 1  for 1D deconvolution test problem in deconvolutionTestProblem.jl
+# EXAMPLEFLAG = 2  for 2D groundwater forward model in ellen.jl
 
 # Last updated July 17, 2015 by Ellen Le
 # Questions: ellenble@gmail.com
@@ -23,7 +22,7 @@ const EXAMPLEFLAG = 1
 # Water Resources Research, 50(7): 5428-5443, 2014
 
 #Run the optimization loop until it converges or a total_iter number of times
-const total_iter = 3;
+const total_iter = 10;
 
 if EXAMPLEFLAG == 1
     using PyPlot
@@ -32,9 +31,9 @@ if EXAMPLEFLAG == 1
     const numparams = 30
     G,strue,yvec,Gamma,Q = deconv2(numparams,noise);
 
-    const p = 15 # The oversampling parameter for increasing RSVD accuracy
-    const q = 3 # Number of power iterations in the RSVD
-    const K = 5 # Set the rank of the RSVD for Q, take i.e. K =
+    const p = 0 # The oversampling parameter for increasing RSVD accuracy
+    const q = 0 # Number of power iterations in the RSVD
+    const K = 10 # Set the rank of the RSVD for Q, take i.e. K =
                 # ceil(length(strue)/7) 
 
     Z = PCGA.randSVDzetas(Q,K,p,q); # Random SVD on the prior part covariance matrix
@@ -69,7 +68,7 @@ U,S = svd(Q) #assuming Q not perfectly spd
 Sh = sqrt(S)
 L = U*diagm(Sh)
 srand(1)
-s0 = mean_s + 0.1* L * randn(length(strue));
+s0 = mean_s + 0.5* L * randn(length(strue));
 
 relerror = Array(Float64,total_iter+1)
 sbar  = Array(Float64,length(strue),total_iter+1)
@@ -110,9 +109,9 @@ if EXAMPLEFLAG == 1
     title("Relative error vs iteration number, PCGA method")
 
 elseif EXAMPLEFLAG == 2
-    fignum  = 5    
+    totfignum  = 5 
 
-    k1mean, k2mean = x2k(mean_s)
+    k1mean, k2mean = x2k(mean_s) #mean_s is all 0's
     logk_mean = ks2k(k1mean,k2mean)
 
     k1s0,k2s0 = x2k(s0)
@@ -124,33 +123,31 @@ elseif EXAMPLEFLAG == 2
     k1p,k2p = x2k(sbar[:,end]);
     logkp = ks2k(k1p,k2p);
     
-@bp
-    fig = plt.figure(figsize=(6*fignum, 6)) 
+    fig = figure(figsize=(6*totfignum, 6)) 
     
-    
-    plotfield(logk,1,fignum)
-    plt.title("the true logk")
-
-    plotfield(logk_mean,2,fignum)
-    plt.title("the mean, here truelogk + noise")
-
-    plotfield(logk_s0,3,fignum)
-    plt.title("s0 (using prior and mean)")
-
-    plotfield(logkp_i,fignum-1,fignum)
-    plt.title("s_end-1")
-
-    plotfield(logkp,fignum,fignum)
-    plt.title("the last iterate, total_iter = $total_iter")
-
     vmin = minimum(logk)
     vmax = maximum(logk)
-    plt.clim(vmin, vmax)
-    #plt.colorbar() #this makes the resizing weird
-    plt.suptitle("2D example", fontsize=16)        
 
-    plt.show()    
-  
+    plotfield(logk,totfignum,1,vmin,vmax)
+    title("the true logk")
+
+    plotfield(logk_mean,totfignum,2,vmin,vmax)
+    plt.title("the mean, here truelogk + noise")
+
+    plotfield(logk_s0,totfignum,3,vmin,vmax)
+    plt.title("s0 (using prior and mean)")
+    
+    plotfield(logkp_i,totfignum,totfignum-1,vmin,vmax)
+    plt.title("s_end-1")
+
+    plotfield(logkp,totfignum,totfignum,vmin,vmax)
+    plt.title("the last iterate, total_iter = $total_iter")
+
+    ax1 = axes([0.92,0.1,0.01,0.8])   
+    colorbar(cax = ax1)
+
+    suptitle("2D example", fontsize=16)        
+
 else
     println("example not supported")
 end

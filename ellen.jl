@@ -156,20 +156,15 @@ diagp = diagm(ones(lenCoords))
 
 Q = Q_up + Q_up' + diagp
 
-# function distanceLogKvect(coor_vec::Vector p::int,q::int)
-# coords 
-# vec1 = vec([coords[1]...])
-# vec 2 
-#dist = norm(vec1-vec2)
 
-function x2k(x::Vector) #puts logk back into k1,k2 matrices
+function x2k(x::Vector) #puts vectorized logkvect back into k1,k2 matrices
 	k1 = reshape(x[1:(m + 1)*n], (m + 1, n))
 	k2 = reshape(x[(m + 1)*n+1:end], (m, n + 1))
 	return k1, k2
 end
 
-function ks2k(k1::Matrix, k2::Matrix) #puts them back into the field
-    #with invisible points
+function ks2k(k1::Matrix, k2::Matrix) #puts the logk1, logk2 matrices
+    #back into the full grid with invisible points, does an averaging at the missing points
 	m = size(k2, 1)
 	n = size(k1, 2)
 	k = NaN * Array(Float64, (2 * m + 1, 2 * n + 1))
@@ -211,28 +206,15 @@ function ks2k(k1::Matrix, k2::Matrix) #puts them back into the field
 	return k
 end
 
-# function plotfield(field,fignum,totfignum)
-#     plt.subplot(1,totfignum,fignum)
-#     #plt.figure(fignum)
-#     plt.imshow(transpose(field), extent=[c, d, a, b], interpolation="nearest")
-#     #plt.clim(0, 2)
-#     #plt.colorbar()
-#     for i = 1:numobs
-# 	plt.plot(observationpoints[1, i], observationpoints[2, i], ".", color="#E0B0FF")
-#     end
-#     #plt.show()
-# end
 
-function plotfield(field,fignum,totfignum)
+function plotfield(field,totfignum,fignum,vmin,vmax)
     subplot(1,totfignum,fignum)
-    #plt.figure(fignum)
-    imshow(transpose(field), extent=[c, d, a, b], interpolation="nearest")
-    #plt.clim(0, 2)
-    #plt.colorbar()
+    imshow(transpose(field), extent=[c, d, a, b],
+    interpolation="nearest")
+    clim(vmin,vmax)
     for i = 1:numobs
 	plot(observationpoints[1, i], observationpoints[2, i], ".", color="#E0B0FF")
     end
-    #plt.show()
 end
 
 

@@ -1,6 +1,6 @@
 using PyPlot
 
-const EXAMPLEFLAG = 2 
+const EXAMPLEFLAG = 1 
 
 # Runs tests for GA, the full Gauss-Newton method approximated by PCGA. 
 # 2 examples available.
@@ -63,6 +63,7 @@ end
 
 #Run the optimization loop until it converges or a total_iter number of times
 const total_iter = 200;
+
 s0 = zeros(length(strue));
 relerror = Array(Float64,total_iter+1)
 sbar  = Array(Float64,length(strue),total_iter+1)
