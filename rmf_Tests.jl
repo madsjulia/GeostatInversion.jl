@@ -95,8 +95,8 @@ else
 end
 @show(rank(Q))
 
-p = 20; q=0; #change p and q here and in the line below
-function randSVDzetas(A,K; p = 20, q=0)
+p = 20; q=3; #change p and q here and in the line below
+function randSVDzetas(A,K; p = 20, q=3)
     Q = rangefinder1(A,K+p,q);
     B = Q' * A;      # 
     U,S,V = svd(B); #This is algorithm 5.1, Direct SVD
@@ -111,12 +111,15 @@ n_ranks = length(ranks)
 relerr_a = Array(Float64,n_ranks)
 relerr_b = Array(Float64,n_ranks)
 
-# The best rank-100 approximation (deterministic), save this SVD for plot
+# The best rankK-rank approximation (deterministic), save this SVD for
+# plot
+
+rankK = 120
 lenQ = size(Q,1)
 tic()
 U,S,V = svd(Q)
 Sh = sqrt(S)
-Z1 = V*diagm([Sh[1:100];zeros(lenQ-100)])
+Z1 = V*diagm([Sh[1:rankK];zeros(lenQ-rankK)])
 time_bestrankK = toq()
 
 # Plot error comparison of randomized rank-K versus best rank-K
@@ -140,7 +143,7 @@ legend(["approximation error with p=$(p),q=$(q) ", "true relative error of best 
         approx"],loc = "best")
 
 tic()
-Z2 = randSVDzetas(Q,100)
+Z2 = randSVDzetas(Q,rankK)
 time_approxrankK = toq()
 
 relerror_bestrankK = norm(Q-Z1*Z1')/norm(Q)
