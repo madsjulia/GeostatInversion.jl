@@ -100,7 +100,7 @@ end
 #Add gaussian noise to perfect data vector at observation points u_obs
 std_noise = maximum(abs(u_obs))*(noise/100)
 k_std_noise = maximum(abs(k_obs))*(noise/100)
-R = std_noise*eye(numobs)
+R = std_noise*eye(numobs) #assumption that datapoints have iid noise
 
 srand(1234)
 u_obsNoise = vec(u_obs + std_noise*randn(numobs,1))
