@@ -1,16 +1,17 @@
 import PCGA
 
 const EXAMPLEFLAG = 2 
-const CASEFLAG = 4
+const CASEFLAG = 5
 
 # Driver for tests using module PCGA.jl. 2 examples available.
 # Set:
 # EXAMPLEFLAG = 1  for 1D deconvolution test problem in deconvolutionTestProblem.jl
 # EXAMPLEFLAG = 2  for 2D groundwater forward model in ellen.jl
 # CASEFLAG = 1     for mean_s = 0. and random starting point s0 using the prior
-# CASEFLAG = 2     for mean_s = 0.3. and s0 = 0.6 (constants)
+# CASEFLAG = 2     for mean_s = 0.3. and s0 = 0.6 (homogeneous)
 # CASEFLAG = 3     for mean_s = 0.3. and random starting point s0 using the prior
-# CASEFLAG = 4     for mean_s =  and random starting point s0 using the prior
+# CASEFLAG = 4     for mean_s = pertrubed truth and s0 = 0.3.(homogeneous)
+# CASEFLAG = 5     for mean_s = 0. and s0 = 0.
 
 # Last updated July 17, 2015 by Ellen Le
 # Questions: ellenble@gmail.com
