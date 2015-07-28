@@ -1,7 +1,8 @@
 import PCGA
+import Krigapping
 
 const EXAMPLEFLAG = 2 
-const CASEFLAG = 5
+const CASEFLAG = 6
 
 # Driver for tests using module PCGA.jl. 2 examples available.
 # Set:
@@ -12,6 +13,7 @@ const CASEFLAG = 5
 # CASEFLAG = 3     for mean_s = 0.3. and random starting point s0 using the prior
 # CASEFLAG = 4     for mean_s = pertrubed truth and s0 = 0.3.(homogeneous)
 # CASEFLAG = 5     for mean_s = 0. and s0 = 0.
+# CASEFLAG = 6     for mean_s = s0 = kriging of noisy obs points using Q
 
 # Last updated July 17, 2015 by Ellen Le
 # Questions: ellenble@gmail.com
@@ -28,7 +30,7 @@ const CASEFLAG = 5
 # Water Resources Research, 50(7): 5428-5443, 2014
 
 #Run the optimization loop until it converges or a total_iter number of times
-const total_iter = 10;
+const total_iter = 2;
 
 if EXAMPLEFLAG == 1
     using PyPlot
@@ -93,6 +95,13 @@ elseif CASEFLAG == 4
 elseif CASEFLAG == 5
     mean_s = zeros(length(strue));
     s0 = mean_s;
+elseif CASEFLAG == 6
+    mean_s = Array(Float64, length(strue))
+    for i = 1:length(strue)
+	w, krigingerror = Krigapping.krige(collect(coords[i]), xy_obs, cov)
+	mean_s[i] = dot(w, k_obsNoise)
+    end
+    s0 = mean_s
 else
     println("check mean and s0")
 end
@@ -112,8 +121,9 @@ end
 totaltime_PCGA = toq() 
 
 rank_QK = rank(Z*Z')
-rel_errPCGA = norm(sbar[:,end]-strue)/norm(strue);
-@show(total_iter,rel_errPCGA, totaltime_PCGA, rank_QK,p,q,covdenom)
+relerr_s_endminus1 = norm(sbar[:,end-1]-strue)/norm(strue);
+relerr_s_end = norm(sbar[:,end]-strue)/norm(strue);
+@show(total_iter,relerr_s_endminus1, relerr_s_end, totaltime_PCGA, rank_QK,p,q,covdenom)
 
 # Plotting for each example
 if EXAMPLEFLAG == 1
@@ -166,7 +176,7 @@ elseif EXAMPLEFLAG == 2
     plt.title("s0 (using prior and mean)")
     
     plotfield(logkp_i,totfignum,totfignum-1,vmin,vmax)
-    plt.title("s_end-1")
+    plt.title("s_$(total_iter-1)")
 
     plotfield(logkp,totfignum,totfignum,vmin,vmax)
     plt.title("the last iterate, total_iter = $total_iter")
