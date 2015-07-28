@@ -1,11 +1,16 @@
 import PCGA
 
 const EXAMPLEFLAG = 2 
+const CASEFLAG = 4
 
 # Driver for tests using module PCGA.jl. 2 examples available.
 # Set:
 # EXAMPLEFLAG = 1  for 1D deconvolution test problem in deconvolutionTestProblem.jl
 # EXAMPLEFLAG = 2  for 2D groundwater forward model in ellen.jl
+# CASEFLAG = 1     for mean_s = 0. and random starting point s0 using the prior
+# CASEFLAG = 2     for mean_s = 0.3. and s0 = 0.6 (constants)
+# CASEFLAG = 3     for mean_s = 0.3. and random starting point s0 using the prior
+# CASEFLAG = 4     for mean_s =  and random starting point s0 using the prior
 
 # Last updated July 17, 2015 by Ellen Le
 # Questions: ellenble@gmail.com
@@ -61,14 +66,35 @@ for i = 3:size(Z,2)
     Zis = push!(Zis,Z[:,i])
 end
 
-mean_s = zeros(length(strue));
- 
-#choose a random smooth field in the prior to start at
-U,S = svd(Q) #assuming Q not perfectly spd
-Sh = sqrt(S)
-L = U*diagm(Sh)
-srand(1)
-s0 = mean_s + 0.5* L * randn(length(strue));
+if CASEFLAG == 1
+    mean_s = zeros(length(strue));
+    #choose a random smooth field in the prior to start at
+    U,S = svd(Q) #assuming Q not perfectly spd
+    Sh = sqrt(S)
+    L = U*diagm(Sh)
+    srand(1)
+    s0 = mean_s + 0.5* L * randn(length(strue));
+elseif CASEFLAG == 2
+    mean_s = 0.3*ones(length(strue));
+    s0 =  0.6*ones(length(strue));
+elseif CASEFLAG == 3
+    mean_s = 0.3*ones(length(strue));
+    #choose a random smooth field in the prior to start at
+    U,S = svd(Q) #assuming Q not perfectly spd
+    Sh = sqrt(S)
+    L = U*diagm(Sh)
+    srand(1)
+    s0 = mean_s + 0.5* L * randn(length(strue));
+elseif CASEFLAG == 4
+    srand(1)
+    mean_s = strue + 0.5 * randn(length(strue))
+    s0 = 0.3*ones(length(strue));
+elseif CASEFLAG == 5
+    mean_s = zeros(length(strue));
+    s0 = mean_s;
+else
+    println("check mean and s0")
+end
 
 relerror = Array(Float64,total_iter+1)
 sbar  = Array(Float64,length(strue),total_iter+1)
@@ -86,7 +112,7 @@ totaltime_PCGA = toq()
 
 rank_QK = rank(Z*Z')
 rel_errPCGA = norm(sbar[:,end]-strue)/norm(strue);
-@show(total_iter,rel_errPCGA, totaltime_PCGA, rank_QK,p,q)
+@show(total_iter,rel_errPCGA, totaltime_PCGA, rank_QK,p,q,covdenom)
 
 # Plotting for each example
 if EXAMPLEFLAG == 1
@@ -111,7 +137,8 @@ if EXAMPLEFLAG == 1
 elseif EXAMPLEFLAG == 2
     totfignum  = 5 
 
-    k1mean, k2mean = x2k(mean_s) #mean_s is all 0's
+    k1mean, k2mean = x2k(mean_s) #mean_s is all 0's for case 1, 0.3 for
+    #case 2
     logk_mean = ks2k(k1mean,k2mean)
 
     k1s0,k2s0 = x2k(s0)

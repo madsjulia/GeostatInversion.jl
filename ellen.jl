@@ -140,7 +140,8 @@ coords = xyCoordsLogK(logkvect);
 
 lenCoords = length(coords)
 
-cov(h) = exp(-abs(h) / 0.3)
+covdenom = 0.2
+cov(h) = exp(-abs(h) / covdenom)
 
 # Make the exponential isotropic covariance function Q
 Q_up = Array(Float64, lenCoords, lenCoords)
