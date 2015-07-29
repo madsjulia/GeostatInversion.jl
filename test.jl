@@ -2,7 +2,11 @@ import PCGA
 import Krigapping
 
 const EXAMPLEFLAG = 2 
-const CASEFLAG = 6
+const CASEFLAG = 5
+const alphainv = 10 # Constant in front of Q to make prior less
+# important, in the cost function it shows up as Q^-1 so 1/alphainv
+# should be small
+
 
 # Driver for tests using module PCGA.jl. 2 examples available.
 # Set:
@@ -30,7 +34,7 @@ const CASEFLAG = 6
 # Water Resources Research, 50(7): 5428-5443, 2014
 
 #Run the optimization loop until it converges or a total_iter number of times
-const total_iter = 2;
+const total_iter = 100;
 
 if EXAMPLEFLAG == 1
     using PyPlot
@@ -47,6 +51,7 @@ if EXAMPLEFLAG == 1
     Z = PCGA.randSVDzetas(Q,K,p,q); # Random SVD on the prior part covariance matrix
 elseif EXAMPLEFLAG == 2
     include("ellen.jl")
+    Q = alphainv * Q
     testForward = forwardObsPoints
     Gamma = R
     strue = [truelogk1[:]; truelogk2[:]] #vectorized 2D parameter field
@@ -125,12 +130,15 @@ relerr_s_endminus1 = relerror[end-1]
 relerr_s_end = relerror[end]
 rounderr =  round(relerr_s_end*10000)/10000
 
-@show(total_iter,relerr_s_endminus1, relerr_s_end, totaltime_PCGA, rank_QK,p,q,covdenom)
+@show(total_iter,relerr_s_endminus1, relerr_s_end, totaltime_PCGA,
+      rank_QK,p,alphainv)
+#if ex 2 show covar denom
 
 # Plotting for each example
 if EXAMPLEFLAG == 1
     x = linspace(0,1,numparams);
    
+    figure()
     plot(x,strue,x,mean_s,x,sbar[:,1],x,sbar[:,end],linestyle="-",marker="o")
     legend(["sythetic","s_mean","initial s_0 (a random field in the
     prior probability distribution)","s_$(total_iter)"], loc=0)
@@ -143,7 +151,7 @@ if EXAMPLEFLAG == 1
     rank=$(rank_QK), p=$(p), q=$(q), relerr=$(rounderr)")
     grid("on")
 
-    figure(2)
+    figure()
     plot(1:total_iter+1,relerror,linestyle="-",marker="o")
     title("Relative error vs iteration number, PCGA method")
 
@@ -186,7 +194,12 @@ elseif EXAMPLEFLAG == 2
     ax1 = axes([0.92,0.1,0.01,0.8])   
     colorbar(cax = ax1)
 
-    suptitle("2D example", fontsize=16)        
+    suptitle("2D example, alphainv = $(alphainv), its = $(total_iter)",
+    fontsize=16)        
+
+    figure()
+    plot(1:total_iter+1,relerror,linestyle="-",marker="o")
+    title("2D relative error vs iteration number, PCGA method, alphainv = $(alphainv)")
 
 else
     println("example not supported")
