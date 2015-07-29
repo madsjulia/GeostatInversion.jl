@@ -55,7 +55,7 @@ elseif EXAMPLEFLAG == 2
     const p = 20 # The oversampling parameter for increasing RSVD accuracy
     const q = 3 # Number of power iterations in the RSVD
     const K = 120 # Set the rank of the RSVD for Q, take i.e. K =
-                  # ceil(length(strue)/7) 
+                  # ceil(length(strue)/7) 50413416850
 
     Z = PCGA.randSVDzetas(Q,K,p,q) 
     numparams = length(strue) 
@@ -121,8 +121,10 @@ end
 totaltime_PCGA = toq() 
 
 rank_QK = rank(Z*Z')
-relerr_s_endminus1 = norm(sbar[:,end-1]-strue)/norm(strue);
-relerr_s_end = norm(sbar[:,end]-strue)/norm(strue);
+relerr_s_endminus1 = relerror[end-1]
+relerr_s_end = relerror[end]
+rounderr =  round(relerr_s_end*10000)/10000
+
 @show(total_iter,relerr_s_endminus1, relerr_s_end, totaltime_PCGA, rank_QK,p,q,covdenom)
 
 # Plotting for each example
@@ -136,7 +138,7 @@ if EXAMPLEFLAG == 1
 
     xlabel("unit 1D domain x")
     ylabel("1D parameter field s(x)")
-    rounderr =  round(rel_errPCGA*10000)/10000
+
     title("PCGA, total iterates=$total_iter, noise=$noise%,
     rank=$(rank_QK), p=$(p), q=$(q), relerr=$(rounderr)")
     grid("on")

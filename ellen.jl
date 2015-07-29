@@ -210,8 +210,7 @@ end
 
 function plotfield(field,totfignum,fignum,vmin,vmax)
     subplot(1,totfignum,fignum)
-    imshow(transpose(field), extent=[c, d, a, b],
-    interpolation="nearest")
+    imshow(transpose(field), extent=[c, d, a, b],interpolation="nearest")
     clim(vmin,vmax)
     for i = 1:numobs
 	plot(observationpoints[1, i], observationpoints[2, i], ".", color="#E0B0FF")

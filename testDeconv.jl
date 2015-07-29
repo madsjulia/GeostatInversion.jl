@@ -5,10 +5,10 @@ using Calculus
 # problem) with zero
 # mean and starting point converges via Newton's method in 3 iterations
 
-const EXAMPLEFLAG = 1 
+const EXAMPLEFLAG = 2 
 const alpha = 100
 const maxit = 10
-const tol = 1e-15
+const tol = 1e-10
 methods = ["l_bfgs", "momentum_gradient_descent","gradient_descent", "bfgs","cg","newton"]
 
 if EXAMPLEFLAG == 1
@@ -73,41 +73,71 @@ function cost_hessian!(x::Vector, y::Matrix)
     return result
 end
 
-f = cost
+#f = cost
 g! = cost_gradient!
 h! = cost_hessian!
 
 for method in methods #make a new graph for each method
 meth = symbol(method)
 
-res1 = optimize(f, g!, h!, s0, method = meth, ftol = tol, grtol = tol, iterations = 1) 
+res1 = optimize(cost, g!, h!, s0, method = meth, ftol = tol, grtol = tol, iterations = 1) 
 s1 = res1.minimum;
 
 tic()   
-res2 = optimize(f, g!, h!, s0, method = meth , ftol = tol, grtol = tol, iterations = maxit)
+res2 = optimize(cost, g!, h!, s0, method = meth , ftol = tol, grtol =
+                tol, iterations = maxit)
 timeOpt = toq()
 s_end = res2.minimum;
+
+relErr_s1 =  norm(s1-strue)/norm(strue)
+relErr_end = norm(s_end-strue)/norm(strue)
+
+rounderr =  round(relErr_end*10000)/10000
+its = res2.iterations
 
 figure()
 
 if EXAMPLEFLAG == 1
+
     x = linspace(0,1,numparams);   
     plot(x,strue,x,s0,linestyle="-",marker="o")
     plot(x,s1,linestyle="-",marker="o")
     plot(x,s_end,linestyle="-",marker="o")    
+    title("$(res2.method), noise = $noise%, total iterates = $its, relerr=$(rounderr)")
+    legend(["synthetic","s_0 = s_mean","s_1","s_$its"],loc= 0)
+    grid("on")
+
 elseif EXAMPLEFLAG == 2
+    totfignum  = 3 
+
+    k1s1,k2s1 = x2k(s1)
+    logk_s1 = ks2k(k1s1,k2s1)
+
+    k1_end,k2_end = x2k(s_end)
+    logk_end = ks2k(k1_end,k2_end)
+    
+    fig = figure(figsize=(6*totfignum, 6)) 
+    
+    vmin = minimum(logk)
+    vmax = maximum(logk)
+
+    plotfield(logk,totfignum,1,vmin,vmax)
+    title("the truth logk")
+
+    plotfield(logk_s1,totfignum,2,vmin,vmax)
+    title("interpolated logk after 1 iteration")
+
+    plotfield(logk_end,totfignum,3,vmin,vmax)
+    title("interpolated logk after $(its) iterations")
+    
+    ax1 = axes([0.92,0.1,0.01,0.8])   
+    colorbar(cax = ax1)
+    suptitle("$(res2.method), noise = $noise%, total iterates = $its, relerr=$(rounderr)", fontsize=16)        
 
 else
     println("example not supported")
 end
 
-grid("on")
-its = res2.iterations
-legend(["synthetic","s_0 = s_mean","s_1","s_$its"],loc= 0)
-
-title("$(res2.method), total iterates = $its, noise = $noise%")
-
-relErr = norm(s_end-strue)/norm(strue)
-@show(res2.method,its,relErr,timeOpt)
+@show(res2.method,its,relErr_s1,relErr_end,timeOpt)
 
 end
