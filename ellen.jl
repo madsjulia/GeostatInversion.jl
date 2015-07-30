@@ -5,15 +5,17 @@ import BlackBoxOptim
 # @pyimport matplotlib.pyplot as plt
 using PyPlot
 
+covdenom = 0.2
+alpha = 800000
 # Forward model, covariance matrix, and helper functions for the 2D
 # groundwater example for PCGA, called by test.jl
 # Dan O'Malley
-# Last updated July 17, 2015 by Ellen Le
+# Last updated July 30, 2015 by Ellen Le
 # Questions: omalled@lanl.gov, ellenble@gmail.com
 
 srand(0)
 
-const noise = 5 # what percent noise i.e. noise =5 means 5% of max value
+const noise = 1 # what percent noise i.e. noise =5 means 5% of max value
 # of yvec
 
 const m = 20#the number of nodes on the pressure grid in the x-direction
@@ -140,11 +142,11 @@ coords = xyCoordsLogK(logkvect);
 
 lenCoords = length(coords)
 
-covdenom = 0.2
+
 cov(h) = exp(-abs(h) / covdenom)
 
 # Make the exponential isotropic covariance function Q
-Q_up = Array(Float64, lenCoords, lenCoords)
+Q_up = zeros(lenCoords, lenCoords)
 #fill in the upper tri part of Q then copy it over since Q symmetric
 for i = 1:lenCoords
     for j = (i+1):lenCoords
@@ -155,8 +157,24 @@ end
 
 diagp = diagm(ones(lenCoords))
 
-Q = Q_up + Q_up' + diagp
+Q = alpha*(Q_up + Q_up' + diagp)
 
+# cov2(h) = exp(-(h.^2) /( covdenom^2))
+# # Make the exponential isotropic covariance function Q
+# Q_up2 = Array(Float64, lenCoords, lenCoords)
+# #fill in the upper tri part of Q then copy it over since Q symmetric
+# for i = 1:lenCoords
+#     for j = (i+1):lenCoords
+#         dist = norm(collect(coords[i]) - collect(coords[j]))
+#         Q_up2[i,j] = cov2(dist)
+#     end
+# end
+
+# diagp = diagm(ones(lenCoords))
+
+# Q2 = alpha*(Q_up2 + Q_up2' + diagp)
+
+# S = chol(inv(Q2),:U)
 
 function x2k(x::Vector) #puts vectorized logkvect back into k1,k2 matrices
 	k1 = reshape(x[1:(m + 1)*n], (m + 1, n))
@@ -164,7 +182,7 @@ function x2k(x::Vector) #puts vectorized logkvect back into k1,k2 matrices
 	return k1, k2
 end
 
-function ks2k(k1::Matrix, k2::Matrix) #puts the logk1, logk2 matrices
+function ks2k(k1::Matrix, k2::Matrix) #puts the logk1, logk2 matricse
     #back into the full grid with invisible points, does an averaging at the missing points
 	m = size(k2, 1)
 	n = size(k1, 2)
@@ -208,8 +226,8 @@ function ks2k(k1::Matrix, k2::Matrix) #puts the logk1, logk2 matrices
 end
 
 
-function plotfield(field,totfignum,fignum,vmin,vmax)
-    subplot(1,totfignum,fignum)
+function plotfield(field,ncol,fignum,vmin,vmax)
+    subplot(2,ncol,fignum)
     imshow(transpose(field), extent=[c, d, a, b],interpolation="nearest")
     clim(vmin,vmax)
     for i = 1:numobs
