@@ -5,11 +5,12 @@ using Calculus
 # problem) with zero
 # mean and starting point converges via Newton's method in 3 iterations
 
-const EXAMPLEFLAG = 2 
+const EXAMPLEFLAG = 1 
 const alpha = 100
-const maxit = 10
+const maxit = 5
 const tol = 1e-10
 methods = ["l_bfgs", "momentum_gradient_descent","gradient_descent", "bfgs","cg","newton"]
+#methods = ["cg"]
 
 if EXAMPLEFLAG == 1
     using PyPlot
