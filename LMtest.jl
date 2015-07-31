@@ -18,7 +18,7 @@ using JLD
 # Inverse Problem, 
 # Water Resources Research, 50(7): 5428-5443, 2014
 
-PLOTFLAG = 0
+PLOTFLAG = 1
 SAVEFLAG = 1
 
 include("finite_difference.jl")
@@ -55,8 +55,8 @@ end
 initial_s = zeros(length(strue));
 
 tic()
-# Set trace to true to see iterates or call results.trace
-results = Optim.levenberg_marquardt(f_lm, g_lm, initial_s, tolX=1e-15, tolG=1e-15, maxIter=10, lambda=200.0, show_trace=false)
+# Set trace to true to see iterates and call results.trace
+results = Optim.levenberg_marquardt(f_lm, g_lm, initial_s, tolX=1e-15, tolG=1e-15, maxIter=7, lambda=200.0, show_trace=true)
 timeLM = toq()
 
 
@@ -94,7 +94,7 @@ if PLOTFLAG == 1
     title("|S*(s-mu)|, LM 2D, its=$(results.iterations),covdenom=$(covdenom),alpha=$(alpha)")
     legend(["at s_true","at s0","at s_min"])
     errLM = norm(results.minimum-strue)/norm(strue)
-    @show(errLM,timeLM, alpha,covdenom)
+    @show(errLM,timeLM, alpha,covdenom,results.iterations)
 
 else
     println("not plotting")
@@ -140,3 +140,61 @@ end
 
 # ax1 = axes([0.92,0.1,0.02,0.8])   
 # colorbar(cax = ax1)
+
+
+
+
+# #Plotting different covariances
+# include("ellen.jl")
+# ncol = 2
+# nrow = 2
+
+# fig = figure(figsize=(6*ncol, 6*nrow)) 
+
+# vmin = minimum(logk)
+# vmax = maximum(logk)
+
+# plotfield(logk,ncol,1,vmin,vmax)
+# title("the true logk")
+
+# alpha = 800
+# i=2
+# for covdenom = [0.1,0.2,0.3]
+#     str="logkp_its$(results.iterations)_al$(alpha)_cov$(covdenom).jld"
+#     logkp = load(str,"logkp")
+
+#     plotfield(logkp,ncol,i,vmin,vmax)
+#     title("LM 2D,
+#           its=$(results.iterations),covdenom=$(covdenom),alpha=$(alpha)")
+#     i = i+1
+# end
+
+
+# ax1 = axes([0.92,0.1,0.02,0.8])   
+# colorbar(cax = ax1)
+
+
+
+
+
+
+ncol = 4
+nrow = 2
+
+fig = figure(figsize=(6*ncol, 6*nrow)) 
+
+vmin = minimum(logk)
+vmax = maximum(logk)
+
+plotfield(logk,ncol,1,vmin,vmax)
+title("the true logk")
+
+# Plotting different iterations
+i=2
+for its = [1,5,10,13,100,10000]                     
+    str="logkp_its$(its)_al$(alpha)_cov$(covdenom).jld"
+    logkp = load(str,"logkp")
+    plotfield(logkp,ncol,i,vmin,vmax)
+    title("LM 2D, its=$(its),covdenom=$(covdenom),alpha=$(alpha)")
+    i = i+1
+end

@@ -5,8 +5,8 @@ import BlackBoxOptim
 # @pyimport matplotlib.pyplot as plt
 using PyPlot
 
-covdenom = 0.2
-alpha = 800000
+covdenom = 0.3
+alpha = 800
 # Forward model, covariance matrix, and helper functions for the 2D
 # groundwater example for PCGA, called by test.jl
 # Dan O'Malley
