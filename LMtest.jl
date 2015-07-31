@@ -82,7 +82,7 @@ if PLOTFLAG == 1
     fig = figure(figsize=(6*2, 6)) 
 
     plotfield(logk,1,2,1,vmin,vmax)
-    title("the true logk,grid size m=$(m)")
+    title("the true logk, grid size m=$(m)")
 
     plotfield(logkp,1,2,2,vmin,vmax)
     title("LM 2D,

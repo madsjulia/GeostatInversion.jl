@@ -3,10 +3,6 @@ import Krigapping
 
 const EXAMPLEFLAG = 2 
 const CASEFLAG = 5
-const alphainv = 10 # Constant in front of Q to make prior less
-# important, in the cost function it shows up as Q^-1 so 1/alphainv
-# should be small
-
 
 # Driver for tests using module PCGA.jl. 2 examples available.
 # Set:
@@ -34,7 +30,7 @@ const alphainv = 10 # Constant in front of Q to make prior less
 # Water Resources Research, 50(7): 5428-5443, 2014
 
 #Run the optimization loop until it converges or a total_iter number of times
-const total_iter = 100;
+const total_iter = 13;
 
 if EXAMPLEFLAG == 1
     using PyPlot
@@ -50,8 +46,7 @@ if EXAMPLEFLAG == 1
 
     Z = PCGA.randSVDzetas(Q,K,p,q); # Random SVD on the prior part covariance matrix
 elseif EXAMPLEFLAG == 2
-    include("ellen.jl")
-    Q = alphainv * Q
+    include("ellen.jl") #get R, Q
     testForward = forwardObsPoints
     Gamma = R
     strue = [truelogk1[:]; truelogk2[:]] #vectorized 2D parameter field
@@ -130,10 +125,6 @@ relerr_s_endminus1 = relerror[end-1]
 relerr_s_end = relerror[end]
 rounderr =  round(relerr_s_end*10000)/10000
 
-@show(total_iter,relerr_s_endminus1, relerr_s_end, totaltime_PCGA,
-      rank_QK,p,alphainv)
-#if ex 2 show covar denom
-
 # Plotting for each example
 if EXAMPLEFLAG == 1
     x = linspace(0,1,numparams);
@@ -156,8 +147,8 @@ if EXAMPLEFLAG == 1
     title("Relative error vs iteration number, PCGA method")
 
 elseif EXAMPLEFLAG == 2
-    nrow = 1
-    totfignum  = 5 
+    nrow = 2
+    ncol = 4 
 
     k1mean, k2mean = x2k(mean_s) #mean_s is all 0's for case 1, 0.3 for
     #case 2
@@ -165,42 +156,45 @@ elseif EXAMPLEFLAG == 2
 
     k1s0,k2s0 = x2k(s0)
     logk_s0 = ks2k(k1s0,k2s0)
-
-    k1p_i,k2p_i = x2k(sbar[:,end-1]);
-    logkp_i = ks2k(k1p_i,k2p_i);
-
-    k1p,k2p = x2k(sbar[:,end]);
-    logkp = ks2k(k1p,k2p);
-    
-    fig = figure(figsize=(6*totfignum, 6)) 
+  
+    fig = figure(figsize=(6*ncol, 6*nrow)) 
     
     vmin = minimum(logk)
     vmax = maximum(logk)
 
-    plotfield(logk,nrow,totfignum,1,vmin,vmax)
+    plotfield(logk,nrow,ncol,1,vmin,vmax)
     title("the true logk")
 
-    plotfield(logk_mean,nrow,totfignum,2,vmin,vmax)
-    plt.title("the mean, here truelogk + noise")
+    plotfield(logk_mean,nrow,ncol,2,vmin,vmax)
+    plt.title("the mean")
 
-    plotfield(logk_s0,nrow, totfignum,3,vmin,vmax)
-    plt.title("s0 (using prior and mean)")
+    plotfield(logk_s0,nrow, ncol,3,vmin,vmax)
+    plt.title("s0")
     
-    plotfield(logkp_i,nrow,totfignum,totfignum-1,vmin,vmax)
-    plt.title("s_$(total_iter-1)")
+    #plotting the iterates
+    j=1
+    for i = [1:4,13]
+        k1p_i,k2p_i = x2k(sbar[:,i+1]);
+        logkp_i = ks2k(k1p_i,k2p_i;)
+        plotfield(logkp_i,nrow,ncol,3+j,vmin,vmax)
+        plt.title("s_$(i)")
+        j=j+1
+    end
 
-    plotfield(logkp,nrow,totfignum,totfignum,vmin,vmax)
-    plt.title("the last iterate, total_iter = $total_iter")
-
-
-    suptitle("2D example, alphainv = $(alphainv), its = $(total_iter)",
-    fontsize=16)        
-
+    suptitle("PCGA 2D, its=$(total_iter),covdenom=$(covdenom),alpha=$(alpha),err=$(rounderr)",fontsize=16)        
+    
     figure()
-    plot(1:total_iter+1,relerror,linestyle="-",marker="o")
-    title("2D relative error vs iteration number, PCGA method, alphainv = $(alphainv)")
+    plot(0:total_iter,relerror,linestyle="-",marker="o")
+    title("2D relative error vs iteration number, PCGA method")
 
 else
     println("example not supported")
 end
 
+
+@show(total_iter,relerr_s_endminus1, relerr_s_end, totaltime_PCGA,
+      rank_QK,p)
+
+if EXAMPLEFLAG == 2
+    @show(covdenom,alpha)
+end
