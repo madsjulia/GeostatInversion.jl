@@ -156,6 +156,7 @@ if EXAMPLEFLAG == 1
     title("Relative error vs iteration number, PCGA method")
 
 elseif EXAMPLEFLAG == 2
+    nrow = 1
     totfignum  = 5 
 
     k1mean, k2mean = x2k(mean_s) #mean_s is all 0's for case 1, 0.3 for
@@ -176,23 +177,21 @@ elseif EXAMPLEFLAG == 2
     vmin = minimum(logk)
     vmax = maximum(logk)
 
-    plotfield(logk,totfignum,1,vmin,vmax)
+    plotfield(logk,nrow,totfignum,1,vmin,vmax)
     title("the true logk")
 
-    plotfield(logk_mean,totfignum,2,vmin,vmax)
+    plotfield(logk_mean,nrow,totfignum,2,vmin,vmax)
     plt.title("the mean, here truelogk + noise")
 
-    plotfield(logk_s0,totfignum,3,vmin,vmax)
+    plotfield(logk_s0,nrow, totfignum,3,vmin,vmax)
     plt.title("s0 (using prior and mean)")
     
-    plotfield(logkp_i,totfignum,totfignum-1,vmin,vmax)
+    plotfield(logkp_i,nrow,totfignum,totfignum-1,vmin,vmax)
     plt.title("s_$(total_iter-1)")
 
-    plotfield(logkp,totfignum,totfignum,vmin,vmax)
+    plotfield(logkp,nrow,totfignum,totfignum,vmin,vmax)
     plt.title("the last iterate, total_iter = $total_iter")
 
-    ax1 = axes([0.92,0.1,0.01,0.8])   
-    colorbar(cax = ax1)
 
     suptitle("2D example, alphainv = $(alphainv), its = $(total_iter)",
     fontsize=16)        

@@ -18,8 +18,8 @@ srand(0)
 const noise = 1 # what percent noise i.e. noise =5 means 5% of max value
 # of yvec
 
-const m = 20#the number of nodes on the pressure grid in the x-direction
-const n = 20#the number of nodes on the pressure grid in the y-direction
+const m = 50#the number of nodes on the pressure grid in the x-direction
+const n = 50#the number of nodes on the pressure grid in the y-direction
 #the domain we are solving over is (a,b)x(c,d)
 const a = 0
 const b = 1
@@ -235,8 +235,8 @@ function ks2k(k1::Matrix, k2::Matrix) #puts the logk1, logk2 matricse
 end
 
 
-function plotfield(field,ncol,fignum,vmin,vmax)
-    subplot(2,ncol,fignum)
+function plotfield(field,nrow,ncol,fignum,vmin,vmax)
+    subplot(nrow,ncol,fignum)
     imshow(transpose(field), extent=[c, d, a, b],interpolation="nearest")
     clim(vmin,vmax)
     for i = 1:numobs
