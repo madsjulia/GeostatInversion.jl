@@ -6,7 +6,7 @@ import BlackBoxOptim
 using PyPlot
 
 covdenom = 0.2
-alpha = 800
+alpha = 20
 # Forward model, covariance matrix, and helper functions for the 2D
 # groundwater example for PCGA, called by test.jl
 # Dan O'Malley
@@ -15,7 +15,7 @@ alpha = 800
 
 srand(0)
 
-const noise = 1 # what percent noise i.e. noise =5 means 5% of max value
+const noise = 5 # what percent noise i.e. noise = 5 means 5% of max value
 # of yvec
 
 const m = 50#the number of nodes on the pressure grid in the x-direction
@@ -170,8 +170,7 @@ Q = alpha*(Q_up + Q_up' + diagp)
 
 # cov2(h) = exp(-(h.^2) /( covdenom^2))
 # # Make the exponential isotropic covariance function Q
-# Q_up2 = Array(Float64, lenCoords, lenCoords)
-# #fill in the upper tri part of Q then copy it over since Q symmetric
+# Q_up2 = Array(Float64, lenCoords, lenCoords)# #fill in the upper tri part of Q then copy it over since Q symmetric
 # for i = 1:lenCoords
 #     for j = (i+1):lenCoords
 #         dist = norm(collect(coords[i]) - collect(coords[j]))

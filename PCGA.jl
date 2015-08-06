@@ -1,5 +1,5 @@
 module PCGA
-using Debug
+#using Debug
 
 # Julia implementation of PCGA, a method for solving the
 # subsurface inverse problems using a randomized low rank approximation of
@@ -46,23 +46,23 @@ function rangefinder(A::Matrix,l::Int64,its::Int64)
         Q,R = lu(Y)
     end
 
-#   Conduct normalized power iterations.
-#
+    #   Conduct normalized power iterations.
+    #
     for it = 1:its
 
-      Q = (Q'*A)';
+        Q = (Q'*A)';
 
-      Q,R = lu(Q);
-
-      Q = A*Q;
-
-      if it < its
         Q,R = lu(Q);
-      end
 
-      if it == its
-        Q,R,() = qr(Q,pivot = true);
-      end
+        Q = A*Q;
+
+        if it < its
+            Q,R = lu(Q);
+        end
+
+        if it == its
+            Q,R,() = qr(Q,pivot = true);
+        end
 
     end
 
@@ -78,7 +78,9 @@ function randSVDzetas(A::Matrix,K::Int64,p::Int64,q::Int64)
     return Z
 end  
 
-function pcgaiteration(forwardmodel::Function,s::Vector, X::Vector, xis::Array{Array{Float64, 1}, 1}, R::Matrix, y::Vector)
+function pcgaiteration(forwardmodel::Function,s0::Vector, X::Vector,
+                              xis::Array{Array{Float64, 1}, 1}, R::Matrix,
+                              y::Vector,strue::Vector;maxIter = 14,Jtol = 0.01)
     # Inputs: 
     # forwardmodel - param to obs map h(s)
     #            s - current iterate s_k or sbar          
@@ -87,33 +89,88 @@ function pcgaiteration(forwardmodel::Function,s::Vector, X::Vector, xis::Array{A
     #          xis - K columns of Z = randSVDzetas(Q,K,p,q) where Q approx= ZZ^T
     #            R - covariance of measurement error (data misfit term)
     #            y - data vector
+
+
+
     global delta
     p = 1
     K = length(xis)
-    m = length(xis[1])
-    paramstorun = Array(Array{Float64, 1}, length(xis) + 3)
-    for i = 1:length(xis)
-	paramstorun[i] = s + delta * xis[i]
-    end
-    paramstorun[length(xis) + 1] = s
-    paramstorun[length(xis) + 2] = s + delta * X
-    paramstorun[length(xis) + 3] = s + delta * s
-    results = pmap(forwardmodel, paramstorun)
-    n = length(results[1])
-    HQHpR = R
-    HQ = zeros(n, m)
-    for i = 1:K
-	etai = (results[i] - results[K+1]) / delta
-       	HQ += etai * transpose(xis[i])
-	HQHpR += etai * transpose(etai)
-    end
-    HX = (results[end-1] - results[end-2]) / delta
-    Hs = (results[end] - results[K+1]) / delta
-    bigA = [HQHpR HX; transpose(HX) zeros(p, p)]
-    b = [y - results[1] + Hs; zeros(p)]
-    x = pinv(bigA) * b
-    s_new = X * x[end] + (HQ)'* x[1:end-1]
-    return s_new 
+    m = length(s0)
+    n = length(y)
+
+    RMSE = Array(Float64,maxIter+1)
+    sbar  = Array(Float64,length(strue),maxIter+1)
+    sbar[:,1] = s0;
+    s = s0;
+    RMSE[1] = norm(sbar[:,1]-strue)*(1/sqrt(m))
+    cost = Array(Float64, maxIter)
+
+    converged = false
+    iterCt = 0
+
+    hs = forwardmodel(s)
+
+    
+
+    while ( ~converged && iterCt < maxIter )
+
+        paramstorun = Array(Array{Float64, 1}, length(xis) + 2)
+        
+        for i = 1:length(xis)
+	    paramstorun[i] = s + delta * xis[i]
+        end
+        
+        paramstorun[K + 1] = s + delta * X
+        paramstorun[K + 2] = s + delta * s
+        
+        results = pmap(forwardmodel, paramstorun) 
+
+        HQH = zeros(n,n)
+        HQ = zeros(n, m)
+        for i = 1:K
+	    etai = (results[i] - hs) / delta
+       	    HQ += etai * transpose(xis[i])
+	    HQH += etai * transpose(etai)
+        end
+        HX = (results[K+1] - hs) / delta
+        Hs = (results[K+2] - hs) / delta
+        
+        #Kred = 2000;
+        #@show(Kred)
+        # N  = size(R,2)
+        # srand(1)
+        # S = [1/sqrt(N)*randn(Kred,N) zeros(Kred,p);zeros(p,N) eye(p,p)];
+        HQHpR = HQH+R 
+        bigA = [HQHpR HX; transpose(HX) zeros(p, p)];
+        b = [y - results[1] + Hs; zeros(p)];
+        # bigAp = S*bigA
+        # bp = S*b
+        # x = pinv(bigAp)*(bp)
+        x = pinv(bigA) * b
+        beta_bar = x[end]
+        xi_bar = x[1:end-1]
+        sbar[:,iterCt+2] = X * beta_bar + (HQ)'* xi_bar
+        RMSE[iterCt+2] = norm(sbar[:,iterCt+2]-strue)*(1/sqrt(m))
+        s = sbar[:,iterCt+2]
+        
+        iterCt += 1
+        
+        hs = forwardmodel(s)
+        cost[iterCt] = 0.5*dot(y-hs,R\(y-hs)) + 0.5*dot(xi_bar,HQH*xi_bar)
+
+        if iterCt>1 
+            # Check convergence criteria
+            costchange = cost[iterCt-1]-cost[iterCt]
+            if costchange<0
+                println("cost is increasing")
+            elseif costchange<Jtol
+                converged = true
+                println("cost not changing, converged")
+            end     
+        end
+    end    
+
+    return sbar,RMSE,cost,iterCt
 end
 
 end

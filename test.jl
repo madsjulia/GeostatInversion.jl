@@ -1,8 +1,10 @@
 import PCGA
 import Krigapping
+using JLD
 
 const EXAMPLEFLAG = 2 
 const CASEFLAG = 5
+const SAVEFLAG = 0
 
 # Driver for tests using module PCGA.jl. 2 examples available.
 # Set:
@@ -35,7 +37,7 @@ const total_iter = 13;
 if EXAMPLEFLAG == 1
     using PyPlot
     include("deconvolutionTestProblem.jl")
-    const noise = 5  #  noise = 5 means 5% of max value
+    const noise = 1  #  noise = 5 means 5% of max value
     const numparams = 30
     G,strue,yvec,Gamma,Q = deconv2(numparams,noise);
 
@@ -106,24 +108,29 @@ else
     println("check mean and s0")
 end
 
-relerror = Array(Float64,total_iter+1)
-sbar  = Array(Float64,length(strue),total_iter+1)
-sbar[:,1] = s0;
-relerror[1] = norm(sbar[:,1]-strue)/norm(strue);
+# relerror = Array(Float64,total_iter+1)
+# sbar  = Array(Float64,length(strue),total_iter+1)
+# sbar[:,1] = s0;
+# relerror[1] = norm(sbar[:,1]-strue)/norm(strue);
 
 tic()
 
-for k = 1:total_iter
-    sbar[:,k+1] = PCGA.pcgaiteration(testForward, sbar[:,k], mean_s, Zis, Gamma, yvec)
-    relerror[k+1] = norm(sbar[:,k+1]-strue)/norm(strue);
-end
+# for k = 1:total_iter
+#     sbar[:,k+1] = PCGA.pcgaiteration(testForward, sbar[:,k], mean_s, Zis, Gamma, yvec)
+#     relerror[k+1] = norm(sbar[:,k+1]-strue)/norm(strue);
+# end
+
+
+sbar,RMSE,cost,iterCt =  PCGA.pcgaiteration(testForward, s0, mean_s, Zis,
+                                 Gamma, yvec, strue, maxIter=total_iter)
+
 
 totaltime_PCGA = toq() 
 
 rank_QK = rank(Z*Z')
-relerr_s_endminus1 = relerror[end-1]
-relerr_s_end = relerror[end]
-rounderr =  round(relerr_s_end*10000)/10000
+rmse_s_endminus1 = RMSE[iterCt-1]
+rmse_s_end = RMSE[iterCt]
+rounderr =  round(rmse_s_end*10000)/10000
 
 # Plotting for each example
 if EXAMPLEFLAG == 1
@@ -132,18 +139,18 @@ if EXAMPLEFLAG == 1
     figure()
     plot(x,strue,x,mean_s,x,sbar[:,1],x,sbar[:,end],linestyle="-",marker="o")
     legend(["sythetic","s_mean","initial s_0 (a random field in the
-    prior probability distribution)","s_$(total_iter)"], loc=0)
+    prior probability distribution)","s_$(iterCt)"], loc=0)
 
 
     xlabel("unit 1D domain x")
     ylabel("1D parameter field s(x)")
 
-    title("PCGA, total iterates=$total_iter, noise=$noise%,
-    rank=$(rank_QK), p=$(p), q=$(q), relerr=$(rounderr)")
+    title("PCGA, total iterates=$(iterCt), noise=$(noise)%,
+    RMSE=$(rounderr), time=$(totaltime_PCGA)")
     grid("on")
 
     figure()
-    plot(1:total_iter+1,relerror,linestyle="-",marker="o")
+    plot(1:iterCt+1,relerror,linestyle="-",marker="o")
     title("Relative error vs iteration number, PCGA method")
 
 elseif EXAMPLEFLAG == 2
@@ -173,26 +180,49 @@ elseif EXAMPLEFLAG == 2
     
     #plotting the iterates
     j=1
-    for i = [1:4,13]
+    for i = [1:4,iterCt]
         k1p_i,k2p_i = x2k(sbar[:,i+1]);
-        logkp_i = ks2k(k1p_i,k2p_i;)
+        logkp_i = ks2k(k1p_i,k2p_i)
         plotfield(logkp_i,nrow,ncol,3+j,vmin,vmax)
         plt.title("s_$(i)")
         j=j+1
     end
 
-    suptitle("PCGA 2D, its=$(total_iter),covdenom=$(covdenom),alpha=$(alpha),err=$(rounderr)",fontsize=16)        
+    suptitle("PCGA 2D, noise=$(noise)%,its=$(iterCt),covdenom=$(covdenom),
+alpha=$(alpha),RMSE=$(rounderr),time=$(totaltime_PCGA)",fontsize=16)        
+
+    ax1 = axes([0.92,0.1,0.02,0.8])   
+    colorbar(cax = ax1)
     
     figure()
-    plot(0:total_iter,relerror,linestyle="-",marker="o")
-    title("2D relative error vs iteration number, PCGA method")
+    plot(0:iterCt,RMSE[1:iterCt+1],linestyle="-",marker="o")
+    title("2D RMSE vs iteration number, PCGA method,
+    noise=$(noise)%")'
+    
+    figure()
+    plot(1:iterCt,cost[1:iterCt],linestyle="-",marker="o")
+    title("2D cost vs iteration number, PCGA method,
+    noise=$(noise)%")'
+
+    k1p,k2p = x2k(sbar[:,end]);
+    logkp = ks2k(k1p,k2p)
+
+    if SAVEFLAG == 1
+        str="PCGAnoise$(noise)__al$(alpha)_cov$(covdenom).jld"
+        @show(str)   
+        println("saving")
+        save(str,"logkp",logkp,"totaltime_PCGA",totaltime_PCGA,"RMSE",RMSE)
+    elseif SAVEFLAG == 0
+        println("not saving")
+    end
+
 
 else
     println("example not supported")
 end
 
 
-@show(total_iter,relerr_s_endminus1, relerr_s_end, totaltime_PCGA,
+@show(iterCt,rmse_s_endminus1, rmse_s_end, totaltime_PCGA,
       rank_QK,p)
 
 if EXAMPLEFLAG == 2
