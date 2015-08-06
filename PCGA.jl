@@ -5,7 +5,7 @@ module PCGA
 # subsurface inverse problems using a randomized low rank approximation of
 # the prior covariance, and a finite difference approximation of the
 # gradient. No adjoints, gradients, or Hessians required.  
-# Last updated July 17, 2015 by Ellen Le
+# Last updated Aug 6, 2015 by Ellen Le
 # Questions: ellenble@gmail.com
 
 # References: 
@@ -80,7 +80,9 @@ end
 
 function pcgaiteration(forwardmodel::Function,s0::Vector, X::Vector,
                               xis::Array{Array{Float64, 1}, 1}, R::Matrix,
-                              y::Vector,strue::Vector;maxIter = 14,Jtol = 0.01)
+                              y::Vector,strue::Vector;maxIter =
+                              14,randls=false,S=zeros(1,1),Jtol
+                              = 0.01)
     # Inputs: 
     # forwardmodel - param to obs map h(s)
     #            s - current iterate s_k or sbar          
@@ -89,7 +91,10 @@ function pcgaiteration(forwardmodel::Function,s0::Vector, X::Vector,
     #          xis - K columns of Z = randSVDzetas(Q,K,p,q) where Q approx= ZZ^T
     #            R - covariance of measurement error (data misfit term)
     #            y - data vector
-
+    #        strue - the truth vectorize log K, only needed for RMSE calculations
+    # Optional Args
+    #       maxIter - maximum # of PCGA iterations
+    #          Jtol - PCGA will quit when the cost moves less than this amount
 
 
     global delta
@@ -135,18 +140,16 @@ function pcgaiteration(forwardmodel::Function,s0::Vector, X::Vector,
         HX = (results[K+1] - hs) / delta
         Hs = (results[K+2] - hs) / delta
         
-        #Kred = 2000;
-        #@show(Kred)
-        # N  = size(R,2)
-        # srand(1)
-        # S = [1/sqrt(N)*randn(Kred,N) zeros(Kred,p);zeros(p,N) eye(p,p)];
         HQHpR = HQH+R 
         bigA = [HQHpR HX; transpose(HX) zeros(p, p)];
         b = [y - results[1] + Hs; zeros(p)];
-        # bigAp = S*bigA
-        # bp = S*b
-        # x = pinv(bigAp)*(bp)
-        x = pinv(bigA) * b
+        if randls == true
+            bigAp = S*bigA
+            bp = S*b
+            x = pinv(bigAp)*(bp)
+        else
+            x = pinv(bigA) * b
+        end
         beta_bar = x[end]
         xi_bar = x[1:end-1]
         sbar[:,iterCt+2] = X * beta_bar + (HQ)'* xi_bar

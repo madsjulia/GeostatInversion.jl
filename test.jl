@@ -4,7 +4,9 @@ using JLD
 
 const EXAMPLEFLAG = 2 
 const CASEFLAG = 5
-const SAVEFLAG = 0
+const RANDFLAG = 1
+
+const SAVEFLAG = 0 #switch to 1 to save data
 
 # Driver for tests using module PCGA.jl. 2 examples available.
 # Set:
@@ -16,8 +18,9 @@ const SAVEFLAG = 0
 # CASEFLAG = 4     for mean_s = pertrubed truth and s0 = 0.3.(homogeneous)
 # CASEFLAG = 5     for mean_s = 0. and s0 = 0.
 # CASEFLAG = 6     for mean_s = s0 = kriging of noisy obs points using Q
+# RANDFLAG = 1   for reduction of PCGA system using Gauss. sketch. matrix
 
-# Last updated July 17, 2015 by Ellen Le
+# Last updated August 6, 2015 by Ellen Le
 # Questions: ellenble@gmail.com
 #
 # References: 
@@ -32,7 +35,8 @@ const SAVEFLAG = 0
 # Water Resources Research, 50(7): 5428-5443, 2014
 
 #Run the optimization loop until it converges or a total_iter number of times
-const total_iter = 13;
+const total_iter = 13
+const pdrift = 1 #dimension of the drift matrix
 
 if EXAMPLEFLAG == 1
     using PyPlot
@@ -44,7 +48,7 @@ if EXAMPLEFLAG == 1
     const p = 0 # The oversampling parameter for increasing RSVD accuracy
     const q = 0 # Number of power iterations in the RSVD
     const K = 10 # Set the rank of the RSVD for Q, take i.e. K =
-                # ceil(length(strue)/7) 
+        # ceil(length(strue)/7) 
 
     Z = PCGA.randSVDzetas(Q,K,p,q); # Random SVD on the prior part covariance matrix
 elseif EXAMPLEFLAG == 2
@@ -57,7 +61,7 @@ elseif EXAMPLEFLAG == 2
     const p = 20 # The oversampling parameter for increasing RSVD accuracy
     const q = 3 # Number of power iterations in the RSVD
     const K = 120 # Set the rank of the RSVD for Q, take i.e. K =
-                  # ceil(length(strue)/7) 50413416850
+        # ceil(length(strue)/7) 50413416850
 
     Z = PCGA.randSVDzetas(Q,K,p,q) 
     numparams = length(strue) 
@@ -108,22 +112,27 @@ else
     println("check mean and s0")
 end
 
-# relerror = Array(Float64,total_iter+1)
-# sbar  = Array(Float64,length(strue),total_iter+1)
-# sbar[:,1] = s0;
-# relerror[1] = norm(sbar[:,1]-strue)/norm(strue);
+
+if RANDFLAG == 1
+    N  = size(R,2)
+    Kred = 2000
+    @show(Kred)
+    srand(1)
+    S_gauss = [1/sqrt(N)*randn(Kred,N) zeros(Kred,pdrift);zeros(pdrift,N) eye(pdrift,pdrift)];
+    typeS = "Gaussian"
+elseif RANDFLAG == 2
+    #put Achlioptas, rad here
+end
 
 tic()
 
-# for k = 1:total_iter
-#     sbar[:,k+1] = PCGA.pcgaiteration(testForward, sbar[:,k], mean_s, Zis, Gamma, yvec)
-#     relerror[k+1] = norm(sbar[:,k+1]-strue)/norm(strue);
-# end
-
-
-sbar,RMSE,cost,iterCt =  PCGA.pcgaiteration(testForward, s0, mean_s, Zis,
-                                 Gamma, yvec, strue, maxIter=total_iter)
-
+if RANDFLAG == 0
+    sbar,RMSE,cost,iterCt =  PCGA.pcgaiteration(testForward,s0,mean_s,Zis,Gamma,yvec,strue,
+                                                maxIter=total_iter)
+elseif RANDFLAG == 1
+    sbar,RMSE,cost,iterCt =  PCGA.pcgaiteration(testForward,s0,mean_s,Zis,Gamma,yvec, strue,
+                                                maxIter=total_iter,randls=true,S=S_gauss)
+end
 
 totaltime_PCGA = toq() 
 
@@ -135,18 +144,27 @@ rounderr =  round(rmse_s_end*10000)/10000
 # Plotting for each example
 if EXAMPLEFLAG == 1
     x = linspace(0,1,numparams);
-   
+    
     figure()
     plot(x,strue,x,mean_s,x,sbar[:,1],x,sbar[:,end],linestyle="-",marker="o")
     legend(["sythetic","s_mean","initial s_0 (a random field in the
-    prior probability distribution)","s_$(iterCt)"], loc=0)
+            prior probability distribution)","s_$(iterCt)"], loc=0)
 
 
     xlabel("unit 1D domain x")
     ylabel("1D parameter field s(x)")
 
-    title("PCGA, total iterates=$(iterCt), noise=$(noise)%,
-    RMSE=$(rounderr), time=$(totaltime_PCGA)")
+    if RANDFLAG == 0
+
+        title("PCGA, total iterates=$(iterCt), noise=$(noise)%,
+              RMSE=$(rounderr), time=$(totaltime_PCGA)")
+
+    else
+
+        title("Randomized PCGA, total iterates=$(iterCt), noise=$(noise)%,
+              RMSE=$(rounderr), time=$(totaltime_PCGA)")
+    end
+
     grid("on")
 
     figure()
@@ -163,7 +181,7 @@ elseif EXAMPLEFLAG == 2
 
     k1s0,k2s0 = x2k(s0)
     logk_s0 = ks2k(k1s0,k2s0)
-  
+    
     fig = figure(figsize=(6*ncol, 6*nrow)) 
     
     vmin = minimum(logk)
@@ -188,21 +206,30 @@ elseif EXAMPLEFLAG == 2
         j=j+1
     end
 
-    suptitle("PCGA 2D, noise=$(noise)%,its=$(iterCt),covdenom=$(covdenom),
-alpha=$(alpha),RMSE=$(rounderr),time=$(totaltime_PCGA)",fontsize=16)        
+    if RANDFLAG == 0
+
+        suptitle("PCGA 2D, noise=$(noise)%,its=$(iterCt),covdenom=$(covdenom),
+                 alpha=$(alpha),RMSE=$(rounderr),time=$(totaltime_PCGA)",fontsize=16)        
+
+    else
+
+        astr = typeS*" Randomized PCGA 2D, noise=$(noise)%,its=$(iterCt),covdenom=$(covdenom), alpha=$(alpha),RMSE=$(rounderr),time=$(totaltime_PCGA)"
+        suptitle(astr,fontsize=16)        
+    end
 
     ax1 = axes([0.92,0.1,0.02,0.8])   
     colorbar(cax = ax1)
     
     figure()
-    plot(0:iterCt,RMSE[1:iterCt+1],linestyle="-",marker="o")
+    plot(0:iterCt,RMSE[1:iterCt+1],line
+style="-",marker="o")
     title("2D RMSE vs iteration number, PCGA method,
-    noise=$(noise)%")'
+          noise=$(noise)%")'
     
     figure()
     plot(1:iterCt,cost[1:iterCt],linestyle="-",marker="o")
     title("2D cost vs iteration number, PCGA method,
-    noise=$(noise)%")'
+          noise=$(noise)%")'
 
     k1p,k2p = x2k(sbar[:,end]);
     logkp = ks2k(k1p,k2p)
