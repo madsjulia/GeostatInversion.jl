@@ -61,7 +61,7 @@ initial_s = zeros(length(strue));
 tic()
 
 # Set trace to true to see iterates and call results.trace
-results = Optim.levenberg_marquardt(f_lm, g_lm, initial_s, tolX=1e-15, tolG=1e-15, maxIter=13, lambda=200.0, show_trace=true)
+results = Optim.levenberg_marquardt(f_lm, g_lm, initial_s, tolX=1e-15, tolG=1e-15, maxIter=10, lambda=200.0, show_trace=true)
 #results, () = YouzuoLM.levenberg_marquardt(f_lm, g_lm, initial_s, tolX=1e-15, tolG=1e-15, maxIter=13, lambda=200.0, show_trace=true,solver_option=3)
 
 timeLM = toq()
@@ -76,8 +76,8 @@ logkp = ks2k(k1p,k2p);
 
 if PLOTFLAG == 1
   
-    errLM = norm(results.minimum-strue)/norm(strue)
-    rounderr =  round(errLM*10000)/10000
+    RMSE_LM = norm(results.minimum-strue)*(1/sqrt(length(strue)))
+    rounderr =  round(RMSE_LM*10000)/10000
 
     fig = figure(figsize=(6*2, 6)) 
 
@@ -85,8 +85,8 @@ if PLOTFLAG == 1
     title("the true logk, grid size m=$(m)")
 
     plotfield(logkp,1,2,2,vmin,vmax)
-    title("LM 2D,
-          its=$(results.iterations),covdenom=$(covdenom),alpha=$(alpha),err=$(rounderr)")
+    title("LM 2D,its=$(results.iterations),covdenom=$(covdenom),alpha=$(alpha),
+          RMSE=$(rounderr),time=$(timeLM)")
 
     ax1 = axes([0.92,0.1,0.02,0.8])   
     colorbar(cax = ax1)
@@ -105,7 +105,15 @@ if PLOTFLAG == 1
     title("|S*(s-mu)|, LM 2D, its=$(results.iterations),covdenom=$(covdenom),alpha=$(alpha)")
     legend(["at s_true","at s0","at s_min"]) 
 
-    @show(errLM,timeLM, alpha,covdenom,results.iterations,gradTime)
+    @show(RMSE_LM,timeLM, alpha,covdenom,results.iterations,gradTime)
+
+    figure()
+    plotfield(logk-logkp,1,1,1,vmin,vmax,noObs=true)
+    title("LM 2D, logk_truth - logk_10")
+
+    ax1 = axes([0.87,0.1,0.04,0.8])
+    colorbar(cax = ax1)
+
 
 else
     println("not plotting")
@@ -211,35 +219,35 @@ end
 # end
 
 # Tweaking the 50 by 50 case
-nrow = 3
-ncol = 2
-m=50
+# nrow = 3
+# ncol = 2
+# m=50
 
-its = 13
+# its = 13
 
-fig = figure(figsize=(6*ncol, 6*nrow)) 
+# fig = figure(figsize=(6*ncol, 6*nrow)) 
 
-vmin = minimum(logk)
-vmax = maximum(logk)
+# vmin = minimum(logk)
+# vmax = maximum(logk)
 
-plotfield(logk,nrow,ncol,5,vmin,vmax)
-title("the true logk")
+# plotfield(logk,nrow,ncol,5,vmin,vmax)
+# title("the true logk")
 
-i=1
-for covdenom = [0.2,0.3]
-    for alpha =[800,8000]
-        str="$(m)logkp_its$(its)_al$(alpha)_cov$(covdenom).jld"
-        logkp = load(str,"logkp")
-        plotfield(logkp,nrow,ncol,i,vmin,vmax)
-        i = i+1
-        errLM = load(str,"errLM") 
-        rounderr =  round(errLM*10000)/10000
-        title("LM 2D, its=$(its),covdenom=$(covdenom),
-alpha=$(alpha),err=$(rounderr)",fontsize=16)        
-    end
-end
+# i=1
+# for covdenom = [0.2,0.3]
+#     for alpha =[800,8000]
+#         str="$(m)logkp_its$(its)_al$(alpha)_cov$(covdenom).jld"
+#         logkp = load(str,"logkp")
+#         plotfield(logkp,nrow,ncol,i,vmin,vmax)
+#         i = i+1
+#         errLM = load(str,"errLM") 
+#         rounderr =  round(errLM*10000)/10000
+#         title("LM 2D, its=$(its),covdenom=$(covdenom),
+# alpha=$(alpha),err=$(rounderr)",fontsize=16)        
+#     end
+# end
 
-suptitle("LM 2D",fontsize=16)        
+# suptitle("LM 2D",fontsize=16)        
 
-ax1 = axes([0.92,0.1,0.02,0.8])   
-colorbar(cax = ax1)
+# ax1 = axes([0.92,0.1,0.02,0.8])   
+# colorbar(cax = ax1)
