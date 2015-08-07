@@ -6,7 +6,7 @@ const EXAMPLEFLAG = 2
 const CASEFLAG = 5
 const RANDFLAG = 1
 
-const SAVEFLAG = 0 #switch to 1 to save data
+const SAVEFLAG = 1 #switch to 1 to save data
 
 # Driver for tests using module PCGA.jl. 2 examples available.
 # Set:
@@ -221,8 +221,7 @@ elseif EXAMPLEFLAG == 2
     colorbar(cax = ax1)
     
     figure()
-    plot(0:iterCt,RMSE[1:iterCt+1],line
-style="-",marker="o")
+    plot(0:iterCt,RMSE[1:iterCt+1],linestyle="-",marker="o")
     title("2D RMSE vs iteration number, PCGA method,
           noise=$(noise)%")'
     
@@ -235,10 +234,14 @@ style="-",marker="o")
     logkp = ks2k(k1p,k2p)
 
     if SAVEFLAG == 1
-        str="PCGAnoise$(noise)__al$(alpha)_cov$(covdenom).jld"
+        if RANDFLAG == 0
+            str="PCGAnoise$(noise)__al$(alpha)_cov$(covdenom).jld"
+        elseif RANDFLAG == 1
+            str="GRPCGAnoise$(noise)__al$(alpha)_cov$(covdenom)K$(Kred).jld"
+        end
         @show(str)   
         println("saving")
-        save(str,"logkp",logkp,"totaltime_PCGA",totaltime_PCGA,"RMSE",RMSE)
+        save(str,"sbar",sbar,"cost",cost,"totaltime_PCGA",totaltime_PCGA,"RMSE",RMSE,"iterCt",iterCt)
     elseif SAVEFLAG == 0
         println("not saving")
     end
