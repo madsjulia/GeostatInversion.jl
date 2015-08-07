@@ -45,7 +45,11 @@ for RANDFLAG=[1,0]
         k1p_i,k2p_i = x2k(sbar[:,i+1]);
         logkp_i = ks2k(k1p_i,k2p_i)
         plotfield(logk-logkp_i,nrow,ncol,1+j,vmin,vmax,noObs=true)
-        plt.title("s_truth - s_$(i)")
+        RMSE_field = norm(logk[:]-logkp_i[:])*(1/sqrt(length(logk)))
+        roundrmse = round(RMSE_field*10000)/10000
+        @show(i,RMSE_field)
+
+        plt.title("s_truth - s_$(i),RMSE_field=$(roundrmse)")
         j=j+1
     end
 
