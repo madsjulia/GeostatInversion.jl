@@ -234,12 +234,14 @@ function ks2k(k1::Matrix, k2::Matrix) #puts the logk1, logk2 matricse
 end
 
 
-function plotfield(field,nrow,ncol,fignum,vmin,vmax)
+function plotfield(field,nrow,ncol,fignum,vmin,vmax;noObs=false)
     subplot(nrow,ncol,fignum)
     imshow(transpose(field), extent=[c, d, a, b],interpolation="nearest")
     clim(vmin,vmax)
-    for i = 1:numobs
-	plot(observationpoints[1, i], observationpoints[2, i], ".", color="#E0B0FF")
+    if noObs == false
+        for i = 1:numobs
+	    plot(observationpoints[1, i], observationpoints[2, i], ".", color="#E0B0FF")
+        end
     end
 end
 
