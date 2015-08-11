@@ -1,5 +1,5 @@
 module PCGA
-#using Debug
+using Debug
 
 # Julia implementation of PCGA, a method for solving the
 # subsurface inverse problems using a randomized low rank approximation of
@@ -78,6 +78,9 @@ function randSVDzetas(A::Matrix,K::Int64,p::Int64,q::Int64)
     return Z
 end  
 
+
+
+
 function pcgaiteration(forwardmodel::Function,s0::Vector, X::Vector,
                               xis::Array{Array{Float64, 1}, 1}, R::Matrix,
                               y::Vector,strue::Vector;maxIter =
@@ -115,8 +118,6 @@ function pcgaiteration(forwardmodel::Function,s0::Vector, X::Vector,
 
     hs = forwardmodel(s)
 
-    
-
     while ( ~converged && iterCt < maxIter )
 
         paramstorun = Array(Array{Float64, 1}, length(xis) + 2)
@@ -142,7 +143,7 @@ function pcgaiteration(forwardmodel::Function,s0::Vector, X::Vector,
         
         HQHpR = HQH+R 
         bigA = [HQHpR HX; transpose(HX) zeros(p, p)];
-        b = [y - results[1] + Hs; zeros(p)];
+        b = [y - hs + Hs; zeros(p)];
         if randls == true
             bigAp = S*bigA
             bp = S*b
@@ -172,8 +173,150 @@ function pcgaiteration(forwardmodel::Function,s0::Vector, X::Vector,
             end     
         end
     end    
-
     return sbar,RMSE,cost,iterCt
 end
 
+
+#@debug function pcgaiteration(forwardmodel::Function,s0::Vector,
+#X::Vector,
+function pcgaiterationlm(forwardmodel::Function,s0::Vector, X::Vector,
+                              xis::Array{Array{Float64, 1}, 1}, R::Matrix,
+                              y::Vector,strue::Vector;maxIter =
+                              14,lmoption=1,randls=false,S=zeros(1,1),Jtol
+                              = 0.01)
+
+    
+    maxStep = 35
+    lambda = 0.5 # 1 is same as reg PCGA
+    lambdadown = 0.5
+    lambdaup = 2
+    gamma = 1.1
+    tau = 1 - (1+lambda)^-gamma
+
+        global delta
+        p = 1
+        K = length(xis)
+        m = length(s0)
+        n = length(y)
+
+        RMSE = Array(Float64,maxIter+1)
+        sbar  = Array(Float64,length(strue),maxIter+1)
+        sbar[:,1] = s0;
+        s = s0;
+        RMSE[1] = norm(sbar[:,1]-strue)*(1/sqrt(m))
+        cost = Array(Float64, maxIter)
+
+        converged = false
+        iterCt = 0
+
+        hs = forwardmodel(s)
+
+        while ( ~converged && iterCt < maxIter )
+
+            paramstorun = Array(Array{Float64, 1}, length(xis) + 2)
+            
+            for i = 1:length(xis)
+	        paramstorun[i] = s + delta * xis[i]
+            end
+            
+            paramstorun[K + 1] = s + delta * X
+            paramstorun[K + 2] = s + delta * s
+            
+            results = pmap(forwardmodel, paramstorun) 
+
+            HQH = zeros(n,n)
+            HQ = zeros(n, m)
+            for i = 1:K
+	        etai = (results[i] - hs) / delta
+       	        HQ += etai * transpose(xis[i])
+	        HQH += etai * transpose(etai)
+            end
+            HX = (results[K+1] - hs) / delta
+            Hs = (results[K+2] - hs) / delta
+            
+            HQHpR = HQH+R 
+
+            if lmoption == 0
+                bigA = [HQHpR HX; transpose(HX) zeros(p, p)];
+                b = [y - hs + Hs; zeros(p)];
+
+                if randls == true
+                    bigAp = S*bigA
+                    bp = S*b
+                    x = pinv(bigAp)*(bp)
+                else
+                    x = pinv(bigA) * b
+                end
+                
+                beta_bar = x[end]
+                xi_bar = x[1:end-1]
+
+            elseif lmoption == 1
+
+                # bigA = [HQHpR HX; transpose(HX) zeros(p, p)];
+                # b = [y - hs + Hs; zeros(p)];
+                # x = pinv(bigA) * b
+
+                # beta_bar2 = x[end]
+                # xi_bar2 = x[1:end-1]
+                # sbar2 = X*beta_bar2 + (HQ)'* xi_bar2
+
+                bigA_in = [(HQH + lambda*R) HX; HX' zeros(p,p)]
+                b_in = [y - hs; zeros(p)]
+                
+                bigA_pr = [(HQH - tau*R) HX; HX' zeros(p,p)]
+                b_pr = [Hs; zeros(p)]   
+                
+                x_in = pinv(bigA_in)*b_in
+                x_pr = pinv(bigA_pr)*b_pr
+
+                xi_in = x_in[1:end-1]
+                beta_in = x_in[end]
+                xi_pr = x_pr[1:end-1]
+                beta_pr = x_pr[end]
+                
+                beta_bar = beta_in + beta_pr
+                xi_bar = xi_in + xi_pr
+
+                sbar[:,iterCt+2] = X*beta_bar + (HQ)'* xi_bar
+#@bp
+
+            end
+
+            dels = norm(sbar[:,iterCt+2]-s)
+            RMSE[iterCt+2] = norm(sbar[:,iterCt+2]-strue)*(1/sqrt(m))
+            s = sbar[:,iterCt+2]
+            
+            iterCt += 1
+            
+            hs = forwardmodel(s)
+            cost[iterCt] = 0.5*dot(y-hs,R\(y-hs)) + 0.5*dot(xi_bar,HQH*xi_bar)
+
+            if iterCt>1 
+                # Check convergence criteria
+                costchange = cost[iterCt-1]-cost[iterCt]
+                if (dels > maxStep || costchange < 0)
+                    dels > maxStep && println("step too large, lambda increased at iteration $(iterCt)")
+                    costchange < 0 && println("cost is increasing,lambda increased at iteration $(iterCt)")
+                    lambda = lambda*lambdaup
+                elseif costchange<Jtol
+                    converged = true
+                    println("cost not changing, converged")
+                else
+                    lambda = lambda*lambdadown
+                    println("lambda decreasing")
+                end     
+            elseif iterCt>1
+                dels <= maxStep && (lambda = lambda*lambdadown)
+                dels > maxStep && (lambda = lambda*lambdaup) && println("step too large, increasing lambda at step 1")
+            end
+            tau = 1 - (1+lambda)^-gamma
+
+        end    
+    
+        return sbar,RMSE,cost,iterCt
 end
+
+end
+
+

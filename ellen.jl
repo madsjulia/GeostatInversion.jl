@@ -6,7 +6,7 @@ import BlackBoxOptim
 using PyPlot
 
 covdenom = 0.2
-alpha = 20
+alpha = 80
 # Forward model, covariance matrix, and helper functions for the 2D
 # groundwater example for PCGA, called by test.jl
 # Dan O'Malley
@@ -37,7 +37,7 @@ f(x, y) = 0.#the "source"
 u_d(x, y) = 1 - y#the dirichlet boundary condition that is used on y=c and y=d
 u_n(x, y) = 0.#the neumann boundary condition that is used on x=a, x=b
 #const numobs = 25#the number of observations
-const sqrtnumobs = 71
+const sqrtnumobs = 5
 const numobs = sqrtnumobs * sqrtnumobs
 #observationpoints = BlackBoxOptim.Utils.latin_hypercube_sampling([a, c], [b, d], numobs)#generate a bunch of observation points
 observationpoints = Array(Float64, (2, numobs))

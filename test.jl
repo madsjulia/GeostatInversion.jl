@@ -4,9 +4,12 @@ using JLD
 
 const EXAMPLEFLAG = 2 
 const CASEFLAG = 5
-const RANDFLAG = 1
+const RANDFLAG = 0
 
-const SAVEFLAG = 1 #switch to 1 to save data
+const SAVEFLAG = 0  #switch to 1 to save data
+
+const LMFLAG = 1 #switch to false for vanilla PCGA, 1 means LM algo for GA
+#in Nowak and Cirpka 2004
 
 # Driver for tests using module PCGA.jl. 2 examples available.
 # Set:
@@ -35,7 +38,7 @@ const SAVEFLAG = 1 #switch to 1 to save data
 # Water Resources Research, 50(7): 5428-5443, 2014
 
 #Run the optimization loop until it converges or a total_iter number of times
-const total_iter = 13
+const total_iter = 10
 const pdrift = 1 #dimension of the drift matrix
 
 if EXAMPLEFLAG == 1
@@ -118,7 +121,7 @@ if RANDFLAG == 1
     Kred = 2000
     @show(Kred)
     srand(1)
-    S_gauss = [1/sqrt(N)*randn(Kred,N) zeros(Kred,pdrift);zeros(pdrift,N) eye(pdrift,pdrift)];
+    S_type = [1/sqrt(N)*randn(Kred,N) zeros(Kred,pdrift);zeros(pdrift,N) eye(pdrift,pdrift)];
     typeS = "Gaussian"
 elseif RANDFLAG == 2
     #put Achlioptas, rad here
@@ -126,12 +129,17 @@ end
 
 tic()
 
-if RANDFLAG == 0
+if LMFLAG == 1
+    sbar,RMSE,cost,iterCt =  PCGA.pcgaiterationlm(testForward,s0,mean_s,Zis,Gamma,yvec,strue,
+      maxIter=total_iter,lmoption=LMFLAG)
+elseif RANDFLAG == 0
     sbar,RMSE,cost,iterCt =  PCGA.pcgaiteration(testForward,s0,mean_s,Zis,Gamma,yvec,strue,
                                                 maxIter=total_iter)
 elseif RANDFLAG == 1
     sbar,RMSE,cost,iterCt =  PCGA.pcgaiteration(testForward,s0,mean_s,Zis,Gamma,yvec, strue,
-                                                maxIter=total_iter,randls=true,S=S_gauss)
+                                            maxIter=total_iter,randls=true,S=S_type)
+else
+    println("check LMFLAG,RANDFLAG")
 end
 
 totaltime_PCGA = toq() 
@@ -188,20 +196,24 @@ elseif EXAMPLEFLAG == 2
     vmax = maximum(logk)
 
     plotfield(logk,nrow,ncol,1,vmin,vmax)
+    grid(linewidth=3)    
     title("the true logk")
 
     plotfield(logk_mean,nrow,ncol,2,vmin,vmax)
+    grid(linewidth=3)    
     plt.title("the mean")
 
     plotfield(logk_s0,nrow, ncol,3,vmin,vmax)
+    grid(linewidth=3)
     plt.title("s0")
     
     #plotting the iterates
     j=1
-    for i = [1:4,iterCt]
+    for i = [1:4,10]
         k1p_i,k2p_i = x2k(sbar[:,i+1]);
         logkp_i = ks2k(k1p_i,k2p_i)
         plotfield(logkp_i,nrow,ncol,3+j,vmin,vmax)
+        grid(linewidth=3)       
         plt.title("s_$(i)")
         j=j+1
     end
@@ -219,7 +231,8 @@ elseif EXAMPLEFLAG == 2
 
     ax1 = axes([0.92,0.1,0.02,0.8])   
     colorbar(cax = ax1)
-    
+   
+
     figure()
     plot(0:iterCt,RMSE[1:iterCt+1],linestyle="-",marker="o")
     title("2D RMSE vs iteration number, PCGA method,
@@ -228,16 +241,16 @@ elseif EXAMPLEFLAG == 2
     figure()
     plot(1:iterCt,cost[1:iterCt],linestyle="-",marker="o")
     title("2D cost vs iteration number, PCGA method,
-          noise=$(noise)%")'
+          noise=$(noise)%"')
 
     k1p,k2p = x2k(sbar[:,end]);
     logkp = ks2k(k1p,k2p)
 
     if SAVEFLAG == 1
         if RANDFLAG == 0
-            str="PCGAnoise$(noise)__al$(alpha)_cov$(covdenom).jld"
+            str="PCGAnoise$(noise)__al$(alpha)_cov$(covdenom)obs$(numobs).jld"
         elseif RANDFLAG == 1
-            str="GRPCGAnoise$(noise)__al$(alpha)_cov$(covdenom)K$(Kred).jld"
+            str="GRPCGAnoise$(noise)__al$(alpha)_cov$(covdenom)obs$(numobs)K$(Kred).jld"
         end
         @show(str)   
         println("saving")
