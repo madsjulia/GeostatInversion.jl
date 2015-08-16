@@ -8,7 +8,7 @@ const RANDFLAG = 0
 
 const SAVEFLAG = 0  #switch to 1 to save data
 
-const LMFLAG = 1 #switch to false for vanilla PCGA, 1 means LM algo for GA
+const LMFLAG = 0 #switch to false for vanilla PCGA, 1 means LM algo for GA
 #in Nowak and Cirpka 2004
 
 # Driver for tests using module PCGA.jl. 2 examples available.
@@ -209,7 +209,7 @@ elseif EXAMPLEFLAG == 2
     
     #plotting the iterates
     j=1
-    for i = [1:4,10]
+    for i = [1:4,iterCt]
         k1p_i,k2p_i = x2k(sbar[:,i+1]);
         logkp_i = ks2k(k1p_i,k2p_i)
         plotfield(logkp_i,nrow,ncol,3+j,vmin,vmax)

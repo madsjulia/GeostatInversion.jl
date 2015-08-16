@@ -6,7 +6,7 @@ import BlackBoxOptim
 using PyPlot
 
 covdenom = 0.2
-alpha = 80
+alpha = 20
 # Forward model, covariance matrix, and helper functions for the 2D
 # groundwater example for PCGA, called by test.jl
 # Dan O'Malley
@@ -234,9 +234,9 @@ function ks2k(k1::Matrix, k2::Matrix) #puts the logk1, logk2 matricse
 end
 
 
-function plotfield(field,nrow,ncol,fignum,vmin,vmax;noObs=false)
+function plotfield(field,nrow,ncol,fignum,vmin,vmax;noObs=false, mycmap="jet")
     subplot(nrow,ncol,fignum)
-    imshow(transpose(field), extent=[c, d, a, b],interpolation="nearest")
+    imshow(transpose(field), extent=[c, d, a, b],interpolation="nearest",cmap=mycmap)
     clim(vmin,vmax)
     if noObs == false
         for i = 1:numobs
