@@ -7,13 +7,78 @@ const alpha = 20
 const convdenom = 0.2
 const Kred = 2000
 
-const PLOTFLAG = 1 #switch to 0 for all results, 1 for presentation results
+const PLOTFLAG = 2 #switch to 0 for all results, 1 for presentation
+#results, 2 for newest presentation results
 
 include("ellen.jl")
 
-#plotting for presentation:
+#more plotting for presentation:
 
-if PLOTFLAG == 1
+if PLOTFLAG == 2
+
+    close("all")
+
+    nrow = 1
+    ncol = 1
+    vmin = -0.8
+    vmax = 0.8
+
+#truth ln k
+    figure()
+    plotfield(logk,nrow,ncol,1,vmin,vmax,noObs=true)
+    grid(linewidth=3)  
+    ax2 = axes([0.04,0.1,0.04,0.8])
+    colorbar(cax = ax2)
+    savefig("../../Presentations/wmsym2015/figures/truelogk.pdf")
+
+#LM
+    m=50
+    its = 10
+    lmstr="$(m)logkp_its$(its)_al$(alpha)_cov$(covdenom).jld";
+    @show(lmstr)    
+    iterCt = 10
+    lmlogkp = load(lmstr,"logkp")
+    RMSE_LM =  load(lmstr,"RMSE_LM")
+    timeLM = load(lmstr,"timeLM")
+    @show(RMSE_LM,iterCt,timeLM)
+    figure()
+    plotfield(lmlogkp,nrow,ncol,1,vmin,vmax,noObs=true)
+    grid(linewidth=3)  
+    savefig("../../Presentations/wmsym2015/figures/LM.pdf")
+ 
+# PCGA
+
+    str="PCGAnoise$(noise)__al$(alpha)_cov$(covdenom).jld"
+    @show(str)
+    iterCt = 6
+    sbar = load(str,"sbar")
+    RMSE_PCGA = load(str,"RMSE")
+    time_PCGA = load(str,"totaltime_PCGA")
+    @show(RMSE_PCGA[iterCt],time_PCGA,iterCt)
+    k1p_i,k2p_i = x2k(sbar[:,iterCt]);
+    logkp_i = ks2k(k1p_i,k2p_i)
+    figure()
+    plotfield(logkp_i,nrow,ncol,1,vmin,vmax,noObs=true)
+    grid(linewidth=3)  
+    savefig("../../Presentations/wmsym2015/figures/PCGA.pdf")
+    
+#RGA
+    rstr="GRPCGAnoise$(noise)__al$(alpha)_cov$(covdenom)K$(Kred).jld"
+    @show(rstr)
+    iterCt = 5
+    rsbar = load(rstr,"sbar")
+    RMSE_RGA = load(rstr,"RMSE")
+    time_RGA = load(rstr,"totaltime_PCGA")
+    @show(RMSE_RGA[iterCt],time_RGA,iterCt)
+    rk1p_i,rk2p_i = x2k(rsbar[:,iterCt]);
+    rlogkp_i = ks2k(rk1p_i,rk2p_i)
+    figure()
+    plotfield(rlogkp_i,nrow,ncol,1,vmin,vmax,noObs=true)      
+    grid(linewidth=3)
+    savefig("../../Presentations/wmsym2015/figures/RGA.pdf")
+
+
+elseif PLOTFLAG == 1
     
     close("all")
     nrow = 1
@@ -31,7 +96,7 @@ if PLOTFLAG == 1
     figure(1)
     plotfield(logk,1,3,1,vmin,vmax,noObs=true) #compare diffs
     grid(linewidth=3)  
-    ax2 = axes([0.05,0.1,0.02,0.8])
+    ax2 = axes([0.04,0.1,0.02,0.8])
     colorbar(cax = ax2)
 
     str="PCGAnoise$(noise)__al$(alpha)_cov$(covdenom).jld"
@@ -67,6 +132,36 @@ if PLOTFLAG == 1
     plotfield(rlogkp_i-logk,1,3,3,dvmin,dvmax,noObs=true,mycmap="seismic")
     grid(linewidth=3)  
 
+    ax1 = axes([0.92,0.1,0.02,0.8])
+    colorbar(cax = ax1)
+
+
+
+### plot LM results for comparison
+
+    close("all")
+    nrow = 1
+    ncol = 2
+    vmin = -0.8
+    vmax = 0.8
+
+    dvmin = -0.8
+    dvmax = 0.8
+
+
+    fig4 = figure(figsize=(4*2, 4*1)) #compare diffss in fig 1
+
+    plotfield(logk,1,2,1,vmin,vmax,noObs=true)
+    grid(linewidth=3)  
+
+    m=50
+    its = 10
+    lmstr="$(m)logkp_its$(its)_al$(alpha)_cov$(covdenom).jld";
+    iterCt = 10
+    lmlogkp = load(lmstr,"logkp")
+
+    plotfield(lmlogkp,1,2,2,vmin,vmax,noObs=true)
+    grid(linewidth=3)  
     ax1 = axes([0.92,0.1,0.02,0.8])
     colorbar(cax = ax1)
 

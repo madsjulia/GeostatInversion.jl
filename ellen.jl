@@ -37,7 +37,7 @@ f(x, y) = 0.#the "source"
 u_d(x, y) = 1 - y#the dirichlet boundary condition that is used on y=c and y=d
 u_n(x, y) = 0.#the neumann boundary condition that is used on x=a, x=b
 #const numobs = 25#the number of observations
-const sqrtnumobs = 5
+const sqrtnumobs = 71
 const numobs = sqrtnumobs * sqrtnumobs
 #observationpoints = BlackBoxOptim.Utils.latin_hypercube_sampling([a, c], [b, d], numobs)#generate a bunch of observation points
 observationpoints = Array(Float64, (2, numobs))

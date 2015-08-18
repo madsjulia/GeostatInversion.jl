@@ -114,7 +114,6 @@ if PLOTFLAG == 1
     ax1 = axes([0.87,0.1,0.04,0.8])
     colorbar(cax = ax1)
 
-
 else
     println("not plotting")
 end
@@ -124,7 +123,7 @@ end
 if SAVEFLAG == 1
     str="$(m)logkp_its$(results.iterations)_al$(alpha)_cov$(covdenom).jld"
     @show(str)
-    save(str,"logkp",logkp,"timeLM",timeLM,"errLM",errLM)
+    save(str,"logkp",logkp,"timeLM",timeLM,"RMSE_LM",RMSE_LM)
 else
     println("not saving min logK")
 end
