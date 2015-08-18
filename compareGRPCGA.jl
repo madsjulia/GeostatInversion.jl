@@ -7,14 +7,142 @@ const alpha = 20
 const convdenom = 0.2
 const Kred = 2000
 
-const PLOTFLAG = 2 #switch to 0 for all results, 1 for presentation
-#results, 2 for newest presentation results
-
+const PLOTFLAG = 4 #switch to 0 for all results, 1 for presentation
+#results, 2 for newest presentation results, 3 for paper figures
+#4 for scatter plots
 include("ellen.jl")
 
 #more plotting for presentation:
 
-if PLOTFLAG == 2
+
+if PLOTFLAG == 4 
+  
+    close("all")
+
+# PCGA
+    str="PCGAnoise$(noise)__al$(alpha)_cov$(covdenom).jld"
+    @show(str)
+    iterCt = 6
+    sbar = load(str,"sbar")
+    RMSE_PCGA = load(str,"RMSE")
+    time_PCGA = load(str,"totaltime_PCGA")
+    @show(RMSE_PCGA[iterCt],time_PCGA,iterCt)
+    k1p_i,k2p_i = x2k(sbar[:,iterCt]);
+    logkp_i = ks2k(k1p_i,k2p_i)
+
+    figure(figsize=(11.5,7.5))
+    scatter(logk, logkp_i, s=70, marker="+",facecolor="none",edgecolor="k",label="PCGA")
+    
+    xmin,xmax = xlim()
+    ymin,ymax = ylim()
+    f(x) = x
+    x = linspace(xmin,xmax,100)
+
+    plot(x,f(x),linestyle="-",color="r",linewidth=3)
+    vlines(0, ymin, ymax, color="r", linestyles="dashed",linewidth=3)
+
+    axis([-2,1.5,-2,1.5])
+    legend()
+
+    xlabel("truth log k")
+    ylabel("estimate")    
+
+    grid()
+    savefig("../../paper/rpcgapaper/figures/scatpcga.pdf")
+
+#RGA comparison
+## first RGA on top of PCGA
+    figure(figsize=(11.5,7.5))
+    scatter(logk, logkp_i, s=70, marker="+",facecolor="none",edgecolor="k",label="PCGA")
+
+    xlabel("truth log k")
+    ylabel("estimate")    
+
+    rstr="GRPCGAnoise$(noise)__al$(alpha)_cov$(covdenom)K$(Kred).jld"
+    @show(rstr)
+    iterCt = 5
+    rsbar = load(rstr,"sbar")
+    RMSE_RGA = load(rstr,"RMSE")
+    time_RGA = load(rstr,"totaltime_PCGA")
+    @show(RMSE_RGA[iterCt],time_RGA,iterCt)
+    rk1p_i,rk2p_i = x2k(rsbar[:,iterCt]);
+    rlogkp_i = ks2k(rk1p_i,rk2p_i)
+ 
+    scatter(logk, rlogkp_i, s=70, marker="o",facecolor="none",edgecolor="b",label="RGA")
+   
+    plot(x,f(x),linestyle="-",color="r",linewidth=3)
+    vlines(0, ymin, ymax, color="r", linestyles="dashed",linewidth=3)
+ 
+    axis([-2,1.5,-2,1.5])
+
+    xlabel("truth log k")
+    ylabel("estimate")    
+
+    grid("on")
+
+    legend()
+    savefig("../../paper/rpcgapaper/figures/scatCompare.pdf")
+
+## PCGA on top of RGA
+    figure(figsize=(11.5,7.5))
+   
+    xlabel("truth log k")
+    ylabel("estimate")    
+ 
+    scatter(logk, rlogkp_i, s=70, marker="o",facecolor="none",edgecolor="b",label="RGA")
+    scatter(logk, logkp_i, s=70, marker="+",facecolor="none",edgecolor="k",label="PCGA")
+   
+    plot(x,f(x),linestyle="-",color="r",linewidth=3)
+    vlines(0, ymin, ymax, color="r", linestyles="dashed",linewidth=3)
+ 
+    axis([-2,1.5,-2,1.5])
+
+    xlabel("truth log k")
+    ylabel("estimate")    
+
+    grid("on")
+
+    legend()
+    savefig("../../paper/rpcgapaper/figures/scatCompare2.pdf")
+
+#RGA by itself
+
+    figure(figsize=(11.5,7.5))
+
+    scatter(logk, rlogkp_i, s=70, marker="o",facecolor="none",edgecolor="b",label="RGA")
+
+    plot(x,f(x),linestyle="-",color="r",linewidth=3)
+    vlines(0, ymin, ymax, color="r", linestyles="dashed",linewidth=3)
+ 
+    xlabel("truth log k")
+    ylabel("estimate")    
+
+    grid("on")
+
+    legend()
+    axis([-2,1.5,-2,1.5])
+    savefig("../../paper/rpcgapaper/figures/scatRpcga.pdf")
+
+
+elseif PLOTFLAG == 3 
+    
+close("all")
+
+    nrow = 1
+    ncol = 1
+    vmin = -0.8
+    vmax = 0.8
+
+#truth ln k
+    figure()
+    plotfield(logk,nrow,ncol,1,vmin,vmax,noObs=true)
+    grid(linewidth=3)  
+    ax2 = axes([0.87,0.1,0.04,0.8])
+    colorbar(cax = ax2)
+    savefig("../../paper/rpcgapaper/figures/logk.pdf")
+
+
+elseif PLOTFLAG == 2
 
     close("all")
 
