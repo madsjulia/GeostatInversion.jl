@@ -5,6 +5,7 @@ import BlackBoxOptim
 # @pyimport matplotlib.pyplot as plt
 using PyPlot
 
+@everywhere begin
 covdenom = 0.2
 alpha = 20
 # Forward model, covariance matrix, and helper functions for the 2D
@@ -111,6 +112,7 @@ for i = 1:numobs
 	k_obs[i] = truelogk1[observationI[i], observationJ[i]] 
 	xy_obs[1, i] = a + (observationI[i] - 1) * hx
 	xy_obs[2, i] = c + (observationJ[i] - 1) * hy
+end
 end
 
 #Add gaussian noise to perfect data vector at observation points u_obs
