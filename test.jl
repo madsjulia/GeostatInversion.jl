@@ -4,7 +4,7 @@ using JLD
 
 const EXAMPLEFLAG = 2 
 const CASEFLAG = 5
-const RANDFLAG = 0
+const RANDFLAG = 1
 
 const SAVEFLAG = 0  #switch to 1 to save data
 
@@ -21,6 +21,7 @@ const LMFLAG = 0 #switch to false for vanilla PCGA, 1 means LM algo for GA
 # CASEFLAG = 4     for mean_s = pertrubed truth and s0 = 0.3.(homogeneous)
 # CASEFLAG = 5     for mean_s = 0. and s0 = 0.
 # CASEFLAG = 6     for mean_s = s0 = kriging of noisy obs points using Q
+# CASEFLAG = 7     blob field with 2 permeability values
 # RANDFLAG = 1   for reduction of PCGA system using Gauss. sketch. matrix
 
 # Last updated August 6, 2015 by Ellen Le
@@ -55,7 +56,8 @@ if EXAMPLEFLAG == 1
 
     Z = PCGA.randSVDzetas(Q,K,p,q); # Random SVD on the prior part covariance matrix
 elseif EXAMPLEFLAG == 2
-    include("ellen.jl") #get R, Q
+    #include("ellen.jl") #get R, Q
+    include("blob.jl") #get R, Q
     testForward = forwardObsPoints
     Gamma = R
     strue = [truelogk1[:]; truelogk2[:]] #vectorized 2D parameter field
@@ -119,6 +121,7 @@ end
 if RANDFLAG == 1
     N  = size(R,2)
     Kred = 2000
+    #Kred = 10
     @show(Kred)
     srand(1)
     S_type = [1/sqrt(N)*randn(Kred,N) zeros(Kred,pdrift);zeros(pdrift,N) eye(pdrift,pdrift)];
