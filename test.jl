@@ -56,8 +56,8 @@ if EXAMPLEFLAG == 1
 
     Z = PCGA.randSVDzetas(Q,K,p,q); # Random SVD on the prior part covariance matrix
 elseif EXAMPLEFLAG == 2
-    #include("ellen.jl") #get R, Q
-    include("blob.jl") #get R, Q
+    include("ellen.jl") #get R, Q
+    #include("blob.jl") #get R, Q
     testForward = forwardObsPoints
     Gamma = R
     strue = [truelogk1[:]; truelogk2[:]] #vectorized 2D parameter field
@@ -121,10 +121,11 @@ end
 if RANDFLAG == 1
     N  = size(R,2)
     Kred = 2000
+	#Kred = 250
     #Kred = 10
     @show(Kred)
     srand(1)
-    S_type = [1/sqrt(N)*randn(Kred,N) zeros(Kred,pdrift);zeros(pdrift,N) eye(pdrift,pdrift)];
+    S_type = 1/sqrt(N)*randn(Kred,N)
     typeS = "Gaussian"
 elseif RANDFLAG == 2
     #put Achlioptas, rad here
@@ -139,18 +140,23 @@ elseif RANDFLAG == 0
     sbar,RMSE,cost,iterCt =  PCGA.pcgaiteration(testForward,s0,mean_s,Zis,Gamma,yvec,strue,
                                                 maxIter=total_iter)
 elseif RANDFLAG == 1
-    sbar,RMSE,cost,iterCt =  PCGA.pcgaiteration(testForward,s0,mean_s,Zis,Gamma,yvec, strue,
-                                            maxIter=total_iter,randls=true,S=S_type)
+    @time sbar,RMSE,cost,iterCt =  PCGA.rgaiteration(testForward,s0,mean_s,Zis,Gamma,yvec, strue, S_type,
+                                            maxIter=total_iter,randls=true)
+    #@time sbar,RMSE,cost,iterCt =  PCGA.pcgaiteration(testForward,s0,mean_s,Zis,Gamma,yvec, strue,
+    #                                        maxIter=total_iter,randls=true,S=[S_type zeros(Kred, 1); zeros(1, N) 1.])
+	@show RMSE
 else
     println("check LMFLAG,RANDFLAG")
 end
 
+#=
 totaltime_PCGA = toq() 
 
 rank_QK = rank(Z*Z')
 rmse_s_endminus1 = RMSE[iterCt-1]
 rmse_s_end = RMSE[iterCt]
 rounderr =  round(rmse_s_end*10000)/10000
+=#
 
 # Plotting for each example
 if EXAMPLEFLAG == 1
