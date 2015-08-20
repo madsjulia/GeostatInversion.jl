@@ -16,10 +16,19 @@ const LMFLAG = 0 #switch to false for vanilla PCGA, 1 means LM algo for GA
 const total_iter = 10
 const pdrift = 1 #dimension of the drift matrix
 
-include("blob.jl") #get R, Q
+include("blobV2.jl") #get R, Q
+
+covdenom = 0.2
+alpha = 20.0
+
+logk, truelogk1, truelogk2, forwardObsPoints = bloblogk()
+
+
 testForward = forwardObsPoints
 Gamma = R
 strue = [truelogk1[:]; truelogk2[:]] #vectorized 2D parameter field
+Q = makeCovQ(strue,covdenom,alpha)
+
 yvec = u_obsNoise # see ellen.jl for noise level
 
 const p = 20 # The oversampling parameter for increasing RSVD accuracy
@@ -75,6 +84,10 @@ rmse_s_endminus1 = RMSE[iterCt-1]
 
 =#
 
+
+
+rmse_s_end = RMSE[iterCt]
+
 function plotresults(colorchoice)
     nrow = 2
     ncol = 4 
@@ -114,10 +127,7 @@ function plotresults(colorchoice)
         j=j+1
     end
 
-
-    rmse_s_end = RMSE[iterCt]
     rounderr =  round(rmse_s_end*10000)/10000
-
     if RANDFLAG == 0
 
         suptitle("PCGA 2D, noise=$(noise)%,its=$(iterCt),covdenom=$(covdenom),
@@ -158,12 +168,9 @@ elseif SAVEFLAG == 0
     println("not saving")
 end
 
-@show(iterCt,rmse_s_endminus1, rmse_s_end, totaltime_PCGA,
-      rank_QK,p)
+@show(iterCt, rmse_s_end, totaltime_PCGA)
+@show(covdenom,alpha)
 
-if EXAMPLEFLAG == 2
-    @show(covdenom,alpha)
-end
 
 
 # References: 
