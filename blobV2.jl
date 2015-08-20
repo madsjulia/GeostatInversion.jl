@@ -11,7 +11,6 @@ import BlackBoxOptim
 using PyPlot
 
 @everywhere begin
-
     const m = 50#the number of nodes on the pressure grid in the x-direction
     const n = 50#the number of nodes on the pressure grid in the y-direction
 
@@ -141,7 +140,7 @@ function xyCoordsLogK(logx::Vector)
     return coords
 end
 
-function makeCovQ(logkvect::Vector,covdenom::Float64, alpha::Float64)
+function makeCovQ(logkvect::Vector,covdenom::Float64, alpha::Int64)
     lenCoords = length(logkvect)
     coords = xyCoordsLogK(logkvect)
     Q_lt = zeros(lenCoords, lenCoords)

@@ -16,7 +16,7 @@ alpha = 20
 
 srand(0)
 
-const noise = 5 # what percent noise i.e. noise = 5 means 5% of max value
+const noise = 5.0 # what percent noise i.e. noise = 5 means 5% of max value
 # of yvec
 
 const m = 50#the number of nodes on the pressure grid in the x-direction

@@ -131,7 +131,6 @@ elseif RANDFLAG == 2
     #put Achlioptas, rad here
 end
 
-tic()
 
 if LMFLAG == 1
     sbar,RMSE,cost,iterCt =  PCGA.pcgaiterationlm(testForward,s0,mean_s,Zis,Gamma,yvec,strue,

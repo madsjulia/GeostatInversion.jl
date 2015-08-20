@@ -7,7 +7,7 @@ import PCGA
 import Krigapping
 using JLD
 
-const RANDFLAG = 0
+const RANDFLAG = 1
 const SAVEFLAG = 0  #switch to 1 to save data
 
 #Run the optimization loop until it converges or a maximum total_iter number of times
@@ -16,8 +16,13 @@ const pdrift = 1 #dimension of the drift matrix
 
 include("blobV2.jl") #get u_obs, truth log k, forward map, fcns to make Q,R
 
-const covdenom = 0.2
-const alpha = 20.0
+# for alpha = [1,5,10]
+#     for covdenom = [0.05,0.1,0.2,0.3]
+for alpha = [4,5,6]
+    for covdenom = [0.025,0.05,0.075]
+
+
+
 
 testForward = forwardObsPoints
 strue = [truelogk1[:]; truelogk2[:]] #vectorized 2D parameter field
@@ -83,10 +88,14 @@ function plotresults(colorchoice)
     k1s0,k2s0 = x2k(s0)
     logk_s0 = ks2k(k1s0,k2s0)
 
-    fig = figure(figsize=(6*ncol, 6*nrow)) 
+    fig = figure(figsize=(3*ncol, 3*nrow)) 
+#    fig = figure(figsize=(6*ncol, 6*nrow)) 
 
-    vmin = minimum(logk)
-    vmax = maximum(logk)
+    # vmin = minimum(logk)
+    # vmax = maximum(logk)
+
+    vmin = -0.8
+    vmax = 0.8
 
     plotfield(logk,nrow,ncol,1,vmin,vmax,noObs=true,mycmap=colorchoice)
     grid(linewidth=3)    
@@ -123,16 +132,16 @@ function plotresults(colorchoice)
     colorbar(cax = ax1)
 end
 
-plotresults("seismic")
+plotresults("seismic_r")
 
-figure()
-plot(0:iterCt,RMSE[1:iterCt+1],linestyle="-",marker="o")
-title("2D RMSE vs iteration number, PCGA method, noise=$(noise)%")
+# figure()
+# plot(0:iterCt,RMSE[1:iterCt+1],linestyle="-",marker="o")
+# title("2D RMSE vs iteration number, PCGA method, noise=$(noise)%")
 
-figure()
-plot(1:iterCt,cost[1:iterCt],linestyle="-",marker="o")
-title("2D cost vs iteration number, PCGA method,
-      noise=$(noise)%")
+# figure()
+# plot(1:iterCt,cost[1:iterCt],linestyle="-",marker="o")
+# title("2D cost vs iteration number, PCGA method,
+#       noise=$(noise)%")
 
 if SAVEFLAG == 1
     if RANDFLAG == 0
@@ -147,9 +156,11 @@ elseif SAVEFLAG == 0
     println("not saving")
 end
 
-@show(iterCt, rmse_s_end, totaltime_PCGA)
-@show(covdenom,alpha)
+# @show(iterCt, rmse_s_end, totaltime_PCGA)
+# @show(covdenom,alpha)
 
+end
+end
 
 
 # References: 
