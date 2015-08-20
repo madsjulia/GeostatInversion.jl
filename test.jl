@@ -140,7 +140,7 @@ elseif RANDFLAG == 0
     sbar,RMSE,cost,iterCt =  PCGA.pcgaiteration(testForward,s0,mean_s,Zis,Gamma,yvec,strue,
                                                 maxIter=total_iter)
 elseif RANDFLAG == 1
-    @time sbar,RMSE,cost,iterCt =  PCGA.rgaiteration(testForward,s0,mean_s,Zis,Gamma,yvec, strue, S_type,
+    totaltime_PCGA = @elapsed sbar,RMSE,cost,iterCt =  PCGA.rgaiteration(testForward,s0,mean_s,Zis,Gamma,yvec, strue, S_type,
                                             maxIter=total_iter,randls=true)
     #@time sbar,RMSE,cost,iterCt =  PCGA.pcgaiteration(testForward,s0,mean_s,Zis,Gamma,yvec, strue,
     #                                        maxIter=total_iter,randls=true,S=[S_type zeros(Kred, 1); zeros(1, N) 1.])
@@ -150,12 +150,9 @@ else
 end
 
 #=
-totaltime_PCGA = toq() 
-
 rank_QK = rank(Z*Z')
 rmse_s_endminus1 = RMSE[iterCt-1]
-rmse_s_end = RMSE[iterCt]
-rounderr =  round(rmse_s_end*10000)/10000
+
 =#
 
 # Plotting for each example
@@ -227,6 +224,8 @@ elseif EXAMPLEFLAG == 2
         j=j+1
     end
 
+    rmse_s_end = RMSE[iterCt]
+    rounderr =  round(rmse_s_end*10000)/10000
     if RANDFLAG == 0
 
         suptitle("PCGA 2D, noise=$(noise)%,its=$(iterCt),covdenom=$(covdenom),
