@@ -12,34 +12,23 @@ using PyPlot
 
 @everywhere begin
 
-    srand(0)
-
-    const noise = 5 # what percent noise i.e. noise = 5 means 5% of max value
-    # of yvec
-
     const m = 50#the number of nodes on the pressure grid in the x-direction
     const n = 50#the number of nodes on the pressure grid in the y-direction
+
     #the domain we are solving over is (a,b)x(c,d)
     const a = 0
     const b = 1
     const c = 0
     const d = 1
+
     #distance between points on the solution grid in the x and y directions
     const hx = (b - a) / (m - 1)
     const hy = (d - c) / (n - 1)
-    #the next 4 parameters are for the permeability fields
-    const mean_logk = 1.
-    const other_mean_logk = -1.
-    const sigma_logk = 0.5
-    const betap = -3.5
-    f(x, y) = 0.#the "source"
-    #u_d(x, y) = 1 - y + x * (1 - y)
-    u_d(x, y) = 1 - y#the dirichlet boundary condition that is used on y=c and y=d
-    u_n(x, y) = 0.#the neumann boundary condition that is used on x=a, x=b
-    #const numobs = 25#the number of observations
+     
     const sqrtnumobs = 71
     const numobs = sqrtnumobs * sqrtnumobs
-    #observationpoints = BlackBoxOptim.Utils.latin_hypercube_sampling([a, c], [b, d], numobs)#generate a bunch of observation points
+ 
+   #observationpoints = BlackBoxOptim.Utils.latin_hypercube_sampling([a, c], [b, d], numobs)#generate a bunch of observation points
     observationpoints = Array(Float64, (2, numobs))
     for i = 1:sqrtnumobs
 	for j = 1:sqrtnumobs
@@ -50,11 +39,12 @@ using PyPlot
     observationI = Array(Int64, numobs)
     observationJ = Array(Int64, numobs)
     u_obs = Array(Float64, numobs)
-    k_obs = Array(Float64, numobs)
+    #k_obs = Array(Float64, numobs)
     xy_obs = Array(Float64, (2, numobs))
-    #obsweights = ones(numobs) / (numobs)
 
     function bloblogk(; regweight2=1e-3, regweight3=1e2)
+        const mean_logk = 1.
+        const other_mean_logk = -1.
 	logk = mean_logk * ones(2 * m + 1, 2 * n + 1)
 	for i = 1:2 * m + 1
 	    for j = 1:2 * n + 1
@@ -75,19 +65,22 @@ using PyPlot
 		truelogk2[i, j] = logk[2 * i, 2 * j - 1]
 	    end
 	end
-	function forwardObsPoints(logx::Vector)
+	function forwardObsPoints(logx::Vector) #The forward map, calls ForwardFullGrid then picks out interp points
 	    u = forwardFullGrid(logx)
 	    result = Array(Float64, numobs)
 	    for i = 1:numobs
-		#	result[i] = sqrt(obsweights[i]) *
-                # (u[observationI[i], observationJ[i]] - u_obs[i])
                 result[i] = u[observationI[i], observationJ[i]] 
 	    end
 	    return result
 	end
 	return logk, truelogk1, truelogk2, forwardObsPoints
     end
+
     logk, truelogk1, truelogk2, forwardObsPoints = bloblogk()
+
+    f(x, y) = 0.#the "source"
+    u_d(x, y) = 1 - y#the dirichlet boundary condition that is used on y=c and y=d
+    u_n(x, y) = 0.#the neumann boundary condition that is used on x=a, x=b
     function forwardFullGrid(logx::Vector)
 	x = 10 .^ logx
 	k1 = reshape(x[1:(m + 1)*n], (m + 1, n))
@@ -98,25 +91,29 @@ using PyPlot
 
     #set up the true solution
     trueu = forwardFullGrid([truelogk1[:]; truelogk2[:]])
+
     #set up the observations, which are the "truth" at a number of
     #observation points
     for i = 1:numobs
 	observationI[i] = 1 + int(round((m - 1) * (observationpoints[1, i] - a) / (b - a)))
 	observationJ[i] = 1 + int(round((n - 1) * (observationpoints[2,i] - c) / (d - c)))
 	u_obs[i] = trueu[observationI[i], observationJ[i]] 
-	k_obs[i] = truelogk1[observationI[i], observationJ[i]] 
+	#k_obs[i] = truelogk1[observationI[i], observationJ[i]] 
 	xy_obs[1, i] = a + (observationI[i] - 1) * hx
 	xy_obs[2, i] = c + (observationJ[i] - 1) * hy
     end
 end
 
 #Add gaussian noise to perfect data vector at observation points u_obs
-std_noise = maximum(abs(u_obs))*(noise/100)
-k_std_noise = maximum(abs(k_obs))*(noise/100)
-R = std_noise*eye(numobs) #assumption that datapoints have iid noise
-srand(1234)
-u_obsNoise = vec(u_obs + std_noise*randn(numobs,1))
-k_obsNoise = vec(k_obs + k_std_noise*randn(numobs,1))
+function make_yandR(u_obs::Vector,noise::Float64)
+    std_noise = maximum(abs(u_obs))*(noise/100)
+    # k_std_noise = maximum(abs(k_obs))*(noise/100)
+    R = std_noise*eye(length(u_obs)) #assumption that datapoints have iid noise
+    srand(1234)
+    u_obsNoise = vec(u_obs + std_noise*randn(numobs,1))
+    # k_obsNoise = vec(k_obs + k_std_noise*randn(numobs,1))
+    return u_obsNoise,R
+end
 
 # x0 = mean_logk * ones((m + 1) * n + m * (n + 1)) #Not used right now
 
@@ -144,36 +141,20 @@ function xyCoordsLogK(logx::Vector)
     return coords
 end
 
-#logkvect = [truelogk1[:],truelogk2[:]]
-
-# lenCoords = length(logkvect)
-# Q_up = zeros(lenCoords, lenCoords)
-# #fill in the upper tri part of Q then copy it over since Q symmetric
-# for i = 1:lenCoords
-#     for j = (i+1):lenCoords
-#         dist = norm(collect(coords[i]) - collect(coords[j]))
-#         Q_up[i,j] = cov(dist)
-#     end
-# end
-# diagp = diagm(ones(lenCoords))
-# Q = alpha*(Q_up + Q_up' + diagp)
-
-# #=
-    # Make the exponential isotropic covariance function Q
-    function makeCovQ(logkvect::Vector,covdenom::Float64, alpha::Float64)
-        lenCoords = length(logkvect)
-        coords = xyCoordsLogK(logkvect)
-        Q_lt = zeros(lenCoords, lenCoords)
-        for j= 1:lenCoords
-            for i = (j+1):lenCoords
-                dist = norm(coords[i] - coords[j])
-                Q_lt[i,j] = exp(-abs(dist) /covdenom)
-            end
+function makeCovQ(logkvect::Vector,covdenom::Float64, alpha::Float64)
+    lenCoords = length(logkvect)
+    coords = xyCoordsLogK(logkvect)
+    Q_lt = zeros(lenCoords, lenCoords)
+    for j= 1:lenCoords
+        for i = (j+1):lenCoords
+            dist = norm(coords[i] - coords[j])
+            Q_lt[i,j] = exp(-abs(dist) /covdenom)
         end
-        diagp = diagm(ones(lenCoords))
-        Q = alpha*(Q_lt + Q_lt' + diagp)
-        return Q
     end
+    diagp = diagm(ones(lenCoords))
+    Q = alpha*(Q_lt + Q_lt' + diagp)
+    return Q
+end
 
 
 function x2k(x::Vector) #puts vectorized logkvect back into k1,k2 matrices

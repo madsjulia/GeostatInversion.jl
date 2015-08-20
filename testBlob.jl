@@ -7,29 +7,24 @@ import PCGA
 import Krigapping
 using JLD
 
-const RANDFLAG = 1
+const RANDFLAG = 0
 const SAVEFLAG = 0  #switch to 1 to save data
-const LMFLAG = 0 #switch to false for vanilla PCGA, 1 means LM algo for GA
-#in Nowak and Cirpka 2004
 
-#Run the optimization loop until it converges or a total_iter number of times
+#Run the optimization loop until it converges or a maximum total_iter number of times
 const total_iter = 10
 const pdrift = 1 #dimension of the drift matrix
 
-include("blobV2.jl") #get R, Q
+include("blobV2.jl") #get u_obs, truth log k, forward map, fcns to make Q,R
 
-covdenom = 0.2
-alpha = 20.0
-
-logk, truelogk1, truelogk2, forwardObsPoints = bloblogk()
-
+const covdenom = 0.2
+const alpha = 20.0
 
 testForward = forwardObsPoints
-Gamma = R
 strue = [truelogk1[:]; truelogk2[:]] #vectorized 2D parameter field
 Q = makeCovQ(strue,covdenom,alpha)
 
-yvec = u_obsNoise # see ellen.jl for noise level
+const noise = 5.0
+yvec, Gamma = make_yandR(u_obs,noise)
 
 const p = 20 # The oversampling parameter for increasing RSVD accuracy
 const q = 3 # Number of power iterations in the RSVD
@@ -49,9 +44,9 @@ mean_s = zeros(length(strue));
 s0 = mean_s;
 
 if RANDFLAG == 1
-    N  = size(R,2)
+    N  = length(yvec)
     Kred = 2000
-	#Kred = 250
+    #Kred = 250
     #Kred = 10
     @show(Kred)
     srand(1)
@@ -61,30 +56,19 @@ elseif RANDFLAG == 2
     #put Achlioptas, rad here
 end
 
+if RANDFLAG == 0
+    totaltime_PCGA = @elapsed sbar,RMSE,cost,iterCt =  PCGA.pcgaiteration(testForward,s0,mean_s,Zis,Gamma,yvec,strue,
+                                                                          maxIter=total_iter)
 
-if LMFLAG == 1
-    sbar,RMSE,cost,iterCt =  PCGA.pcgaiterationlm(testForward,s0,mean_s,Zis,Gamma,yvec,strue,
-      maxIter=total_iter,lmoption=LMFLAG)
-elseif RANDFLAG == 0
-    sbar,RMSE,cost,iterCt =  PCGA.pcgaiteration(testForward,s0,mean_s,Zis,Gamma,yvec,strue,
-                                                maxIter=total_iter)
 elseif RANDFLAG == 1
     totaltime_PCGA = @elapsed sbar,RMSE,cost,iterCt =  PCGA.rgaiteration(testForward,s0,mean_s,Zis,Gamma,yvec, strue, S_type,
-                                            maxIter=total_iter,randls=true)
-    #@time sbar,RMSE,cost,iterCt =  PCGA.pcgaiteration(testForward,s0,mean_s,Zis,Gamma,yvec, strue,
-    #                                        maxIter=total_iter,randls=true,S=[S_type zeros(Kred, 1); zeros(1, N) 1.])
-	@show RMSE
-else
-    println("check LMFLAG,RANDFLAG")
+                                                                         maxIter=total_iter,randls=true)
 end
 
 #=
-rank_QK = rank(Z*Z')
-rmse_s_endminus1 = RMSE[iterCt-1]
-
-=#
-
-
+    rank_QK = rank(Z*Z')
+    rmse_s_endminus1 = RMSE[iterCt-1]
+    =#
 
 rmse_s_end = RMSE[iterCt]
 
@@ -129,16 +113,12 @@ function plotresults(colorchoice)
 
     rounderr =  round(rmse_s_end*10000)/10000
     if RANDFLAG == 0
-
         suptitle("PCGA 2D, noise=$(noise)%,its=$(iterCt),covdenom=$(covdenom),
                  alpha=$(alpha),RMSE=$(rounderr),time=$(totaltime_PCGA)",fontsize=16)        
-
     else
-
         astr = typeS*" Randomized PCGA 2D, noise=$(noise)%,its=$(iterCt),covdenom=$(covdenom), alpha=$(alpha),RMSE=$(rounderr),time=$(totaltime_PCGA)"
         suptitle(astr,fontsize=16)        
     end
-
     ax1 = axes([0.92,0.1,0.02,0.8])   
     colorbar(cax = ax1)
 end
@@ -154,12 +134,11 @@ plot(1:iterCt,cost[1:iterCt],linestyle="-",marker="o")
 title("2D cost vs iteration number, PCGA method,
       noise=$(noise)%")
 
-
 if SAVEFLAG == 1
     if RANDFLAG == 0
-        str="PCGAnoise$(noise)__al$(alpha)_cov$(covdenom)obs$(numobs).jld"
+        str="blobPCGAnoise$(noise)__al$(alpha)_cov$(covdenom)obs$(numobs).jld"
     elseif RANDFLAG == 1
-        str="GRPCGAnoise$(noise)__al$(alpha)_cov$(covdenom)obs$(numobs)K$(Kred).jld"
+        str="blobGRPCGAnoise$(noise)__al$(alpha)_cov$(covdenom)obs$(numobs)K$(Kred).jld"
     end
     @show(str)   
     println("saving")
