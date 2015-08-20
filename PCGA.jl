@@ -101,6 +101,14 @@ function rgaiteration(initialforwardmodel::Function,s0::Vector, X::Vector,
 	return pcgaiteration(x->S * initialforwardmodel(x), s0, X, xis, S * R * transpose(S), S * y, strue)
 end
 
+function addaxbt!(HQ::Matrix, a::Vector, b::Vector)
+	for j1 = 1:length(a)
+		for j2 = 1:length(b)
+			@inbounds HQ[j1, j2] += a[j1] * b[j2]
+		end
+	end
+end
+
 function pcgaiteration(forwardmodel::Function,s0::Vector, X::Vector,
                               xis::Array{Array{Float64, 1}, 1}, R::Matrix,
                               y::Vector,strue::Vector;maxIter =
@@ -138,6 +146,8 @@ function pcgaiteration(forwardmodel::Function,s0::Vector, X::Vector,
 
     hs = forwardmodel(s)
 
+	HQH = Array(Float64, n,n)
+	HQ = Array(Float64, n, m)
     while ( ~converged && iterCt < maxIter )
 
         paramstorun = Array(Array{Float64, 1}, length(xis) + 2)
@@ -151,12 +161,14 @@ function pcgaiteration(forwardmodel::Function,s0::Vector, X::Vector,
         
         results = pmap(forwardmodel, paramstorun) 
 
-        HQH = zeros(n,n)
-        HQ = zeros(n, m)
+		fill!(HQH, 0.)
+		fill!(HQ, 0.)
         for i = 1:K
-	    etai = (results[i] - hs) / delta
-       	    HQ += etai * transpose(xis[i])
-	    HQH += etai * transpose(etai)
+			etai = (results[i] - hs) / delta
+			#HQ += etai * transpose(xis[i])
+			addaxbt!(HQ, etai, xis[i])#devectorize the above line
+			#HQH += etai * transpose(etai)
+			addaxbt!(HQH, etai, etai)#devectorize the above line
         end
         HX = (results[K+1] - hs) / delta
         Hs = (results[K+2] - hs) / delta
