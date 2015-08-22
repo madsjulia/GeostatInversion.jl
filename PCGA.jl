@@ -96,9 +96,7 @@ function rgaiteration(initialforwardmodel::Function,s0::Vector, X::Vector,
     # Optional Args
     #       maxIter - maximum # of PCGA iterations
     #          Jtol - PCGA will quit when the cost moves less than this amount
-
-
-	return pcgaiteration(x->S * initialforwardmodel(x), s0, X, xis, S * R * transpose(S), S * y, strue)
+	return pcgaiteration(x->S * initialforwardmodel(x), s0, X, xis, S * R * transpose(S), S * y, strue; maxIter=maxIter)
 end
 
 function addaxbt!(HQ::Matrix, a::Vector, b::Vector)
@@ -149,6 +147,7 @@ function pcgaiteration(forwardmodel::Function,s0::Vector, X::Vector,
 	HQH = Array(Float64, n,n)
 	HQ = Array(Float64, n, m)
     while ( ~converged && iterCt < maxIter )
+		@show iterCt
 
         paramstorun = Array(Array{Float64, 1}, length(xis) + 2)
         

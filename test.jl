@@ -56,7 +56,8 @@ if EXAMPLEFLAG == 1
 
     Z = PCGA.randSVDzetas(Q,K,p,q); # Random SVD on the prior part covariance matrix
 elseif EXAMPLEFLAG == 2
-    include("ellen.jl") #get R, Q
+	include("transient.jl")
+    #include("ellen.jl") #get R, Q
     #include("blob.jl") #get R, Q
     testForward = forwardObsPoints
     Gamma = R
@@ -120,8 +121,8 @@ end
 
 if RANDFLAG == 1
     N  = size(R,2)
-    Kred = 2000
-	#Kred = 250
+    #Kred = 2000
+	Kred = 250
     #Kred = 10
     @show(Kred)
     srand(1)
@@ -144,6 +145,7 @@ elseif RANDFLAG == 1
     #@time sbar,RMSE,cost,iterCt =  PCGA.pcgaiteration(testForward,s0,mean_s,Zis,Gamma,yvec, strue,
     #                                        maxIter=total_iter,randls=true,S=[S_type zeros(Kred, 1); zeros(1, N) 1.])
 	@show RMSE
+	@show totaltime_PCGA
 else
     println("check LMFLAG,RANDFLAG")
 end
@@ -188,11 +190,11 @@ elseif EXAMPLEFLAG == 2
     nrow = 2
     ncol = 4 
 
-    k1mean, k2mean = x2k(mean_s) #mean_s is all 0's for case 1, 0.3 for
+    k1mean, k2mean = FiniteDifference2D.x2ks(mean_s, m, n) #mean_s is all 0's for case 1, 0.3 for
     #case 2
     logk_mean = ks2k(k1mean,k2mean)
 
-    k1s0,k2s0 = x2k(s0)
+    k1s0,k2s0 = FiniteDifference2D.x2ks(s0, m, n)
     logk_s0 = ks2k(k1s0,k2s0)
     
     fig = figure(figsize=(6*ncol, 6*nrow)) 
@@ -215,7 +217,7 @@ elseif EXAMPLEFLAG == 2
     #plotting the iterates
     j=1
     for i = [1:4,iterCt]
-        k1p_i,k2p_i = x2k(sbar[:,i+1]);
+        k1p_i,k2p_i = FiniteDifference2D.x2ks(sbar[:,i+1], m, n);
         logkp_i = ks2k(k1p_i,k2p_i)
         plotfield(logkp_i,nrow,ncol,3+j,vmin,vmax)
         grid(linewidth=3)       
@@ -250,7 +252,7 @@ elseif EXAMPLEFLAG == 2
     title("2D cost vs iteration number, PCGA method,
           noise=$(noise)%"')
 
-    k1p,k2p = x2k(sbar[:,end]);
+    k1p,k2p = FiniteDifference2D.x2ks(sbar[:,end], m, n);
     logkp = ks2k(k1p,k2p)
 
     if SAVEFLAG == 1
@@ -272,8 +274,7 @@ else
 end
 
 
-@show(iterCt,rmse_s_endminus1, rmse_s_end, totaltime_PCGA,
-      rank_QK,p)
+#@show(iterCt,rmse_s_endminus1, rmse_s_end, totaltime_PCGA,rank_QK,p)
 
 if EXAMPLEFLAG == 2
     @show(covdenom,alpha)
