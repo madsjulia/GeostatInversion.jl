@@ -11,10 +11,10 @@ srand(0)
 const covdenom = 0.2
 const alpha = 20
 const noise = 5 # what percent noise i.e. noise = 5 means 5% of max value of yvec
-const m = 10#the number of nodes on the pressure grid in the x-direction
-const n = 10#the number of nodes on the pressure grid in the y-direction
+const m = 50#the number of nodes on the pressure grid in the x-direction
+const n = 50#the number of nodes on the pressure grid in the y-direction
 const finaltime = 1.#time at which the transient solution stops
-const numtimesteps = 20
+const numtimesteps = 200
 const deltat = finaltime / (numtimesteps - 1)
 #the domain we are solving over is (a,b)x(c,d)
 const a = 0
@@ -94,7 +94,7 @@ end
 
 #Add gaussian noise to perfect data vector at observation points u_obs
 std_noise = maximum(abs(u_obs)) * (noise / 100)
-R = std_noise * eye(length(u_obs)) #assumption that datapoints have iid noise
+R = std_noise * speye(length(u_obs)) #assumption that datapoints have iid noise
 u_obsNoise = u_obs + std_noise * randn(length(u_obs))
 x0 = mean_logk * ones((m + 1) * n + m * (n + 1))
 function xyCoordsLogK(logx::Vector)

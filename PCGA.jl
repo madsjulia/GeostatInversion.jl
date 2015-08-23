@@ -80,7 +80,7 @@ end
 
 
 function rgaiteration(initialforwardmodel::Function,s0::Vector, X::Vector,
-                              xis::Array{Array{Float64, 1}, 1}, R::Matrix,
+                              xis::Array{Array{Float64, 1}, 1}, R,
                               y::Vector,strue::Vector,S::Matrix;maxIter =
                               14,randls=false,Jtol
                               = 0.01)
@@ -108,7 +108,7 @@ function addaxbt!(HQ::Matrix, a::Vector, b::Vector)
 end
 
 function pcgaiteration(forwardmodel::Function,s0::Vector, X::Vector,
-                              xis::Array{Array{Float64, 1}, 1}, R::Matrix,
+                              xis::Array{Array{Float64, 1}, 1}, R,
                               y::Vector,strue::Vector;maxIter =
                               14,randls=false,S=zeros(1,1),Jtol
                               = 0.01)
