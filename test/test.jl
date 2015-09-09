@@ -12,11 +12,7 @@ function setupsimpletest(M, N)
 		return p .* x
 	end
 	truey = forward(truep)
-	xis = Array(Array{Float64, 1}, round(Int, M))
-	Z = RMF.randsvd(Q, length(xis), round(Int, 0.1 * M), 3)
-	for i = 1:length(xis)
-		xis[i] = Z[:, i]
-	end
+	xis = GeostatInversion.getxis(Q, M, round(Int, 0.1 * M))
 	X = zeros(N)
 	noiselevel = 0.0001
 	R = noiselevel ^ 2 * eye(N)

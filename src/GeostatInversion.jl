@@ -1,4 +1,16 @@
 module GeostatInversion
+
+import RMF
+
+function getxis(Q::Matrix, K::Int, p::Int, q::Int=3)#K is the number of xis, p is oversampling for randsvd accuracy, q is the number of power iterations -- see review paper by Halko et al
+	xis = Array(Array{Float64, 1}, K)
+	Z = RMF.randsvd(Q, K, p, q)
+	for i = 1:K
+		xis[i] = Z[:, i]
+	end
+	return xis
+end
+
 function rga(forwardmodel::Function, s0::Vector, X::Vector, xis::Array{Array{Float64, 1}, 1}, R, y::Vector, S; maxiters::Int=5, delta::Float64=sqrt(eps(Float64)), xtol::Float64=1e-6)
 	return pcga(x->S * forwardmodel(x), s0, X, xis, S * R * S', S * y; maxiters=maxiters, delta=delta, xtol=xtol)
 end
