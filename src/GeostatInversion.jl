@@ -1,4 +1,8 @@
 module GeostatInversion
+function rga(forwardmodel::Function, s0::Vector, X::Vector, xis::Array{Array{Float64, 1}, 1}, R, y::Vector, S; maxiters::Int=5, delta::Float64=sqrt(eps(Float64)), xtol::Float64=1e-6)
+	return pcga(x->S * forwardmodel(x), s0, X, xis, S * R * S', S * y; maxiters=maxiters, delta=delta, xtol=xtol)
+end
+
 #Inputs: 
 #forwardmodel - param to obs map h(s)
 #s0 - initial guess
@@ -9,13 +13,13 @@ module GeostatInversion
 #Optional Args
 #maxIter - maximum # of PCGA iterations
 #delta - the finite difference step size
-function pcga(forwardmodel::Function, s0::Vector, X::Vector, xis::Array{Array{Float64, 1}, 1}, R, y::Vector; maxIter::Int=5, delta::Float64=sqrt(eps(Float64)), xtol::Float64=1e-6)
+function pcga(forwardmodel::Function, s0::Vector, X::Vector, xis::Array{Array{Float64, 1}, 1}, R, y::Vector; maxiters::Int=5, delta::Float64=sqrt(eps(Float64)), xtol::Float64=1e-6)
 	HQH = Array(Float64, length(y), length(y))
 	HQ = Array(Float64, length(y), length(s0))
 	converged = false
 	s = s0
 	itercount = 0
-	while !converged && itercount < maxIter
+	while !converged && itercount < maxiters
 		olds = s
 		s = pcgaiteration!(HQH, HQ, forwardmodel, s, X, xis, R, y, delta)
 		if norm(s - olds) < xtol

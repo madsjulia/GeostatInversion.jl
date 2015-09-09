@@ -2,7 +2,7 @@ import GeostatInversion
 import RMF
 using Base.Test
 
-function simpletest(M, N)
+function setupsimpletest(M, N)
 	x = randn(N)
 	Q0 = randn(M, N)
 	Q = Q0' * Q0
@@ -22,14 +22,30 @@ function simpletest(M, N)
 	R = noiselevel ^ 2 * eye(N)
 	yobs = truey + noiselevel * randn(N)
 	p0 = zeros(N)
-	popt = GeostatInversion.pcga(forward, p0, X, xis, R, yobs)
-	@test_approx_eq_eps norm(popt - truep) / norm(truep) 0. 1e-3
+	return forward, p0, X, xis, R, yobs, truep
 end
 
-for log2N = 2:8
+function simpletestpcga(M, N)
+	forward, p0, X, xis, R, yobs, truep = setupsimpletest(M, N)
+	popt = GeostatInversion.pcga(forward, p0, X, xis, R, yobs)
+	@test_approx_eq_eps norm(popt - truep) / norm(truep) 0. 1e-2
+end
+
+function simpletestrga(M, N, Nreduced)
+	forward, p0, X, xis, R, yobs, truep = setupsimpletest(M, N)
+	S = randn(Nreduced, N) * (1 / sqrt(N))
+	popt = GeostatInversion.rga(forward, p0, X, xis, R, yobs, S)
+	@test_approx_eq_eps norm(popt - truep) / norm(truep) 0. 1e-2
+end
+
+srand(0)
+maxlog2N = 8
+minlog2N = 2
+for log2N = minlog2N:maxlog2N
 	for log2M = 0:log2N - 1
 		N = 2 ^ log2N
 		M = 2 ^ log2M
-		simpletest(M, N)
+		simpletestpcga(M, N)
+		simpletestrga(M, N, 2 ^ (log2N - 1))#test reducing the observations by a factor of 2
 	end
 end
