@@ -121,5 +121,6 @@ function pcgalsqriteration(forwardmodel::Function, s::Vector, X::Vector, xis::Ar
 end
 
 pcga = pcgadirect
+#TODO implement a pcga that adaptively selects between lsqr and direct based on the number of observations
 
 end

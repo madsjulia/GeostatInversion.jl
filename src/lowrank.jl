@@ -23,11 +23,15 @@ function size(A::PCGALowRankMatrix, i::Int)
 end
 
 function A_mul_B!(v::Vector, A::PCGALowRankMatrix, x::Vector)
-	#TODO make this function faster
-	v[1:end - 1] = A.R * x[1:end - 1]
-	v[end] = dot(A.HX, x[1:end - 1])
+	xshort = x[1:end - 1]
+	v[1:end - 1] = A.R * xshort
+	v[end] = dot(A.HX, xshort)
 	for i = 1:length(A.etas)
-		v[1:end - 1] += A.etas[i] * dot(A.etas[i], x[1:end - 1])
+		#v[1:end - 1] += A.etas[i] * dot(A.etas[i], x[1:end - 1])
+		dotp = dot(A.etas[i], xshort)
+		for j = 1:length(v) - 1
+			v[j] += A.etas[i][j] * dotp
+		end
 	end
 	return v
 end
