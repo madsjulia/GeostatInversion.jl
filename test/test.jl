@@ -15,7 +15,7 @@ function setupsimpletest(M, N)
 	xis = GeostatInversion.getxis(Q, M, round(Int, 0.1 * M))
 	X = zeros(N)
 	noiselevel = 0.0001
-	R = noiselevel ^ 2 * eye(N)
+	R = noiselevel ^ 2 * speye(N)
 	yobs = truey + noiselevel * randn(N)
 	p0 = zeros(N)
 	return forward, p0, X, xis, R, yobs, truep
@@ -23,8 +23,16 @@ end
 
 function simpletestpcga(M, N)
 	forward, p0, X, xis, R, yobs, truep = setupsimpletest(M, N)
-	popt = GeostatInversion.pcga(forward, p0, X, xis, R, yobs)
+	println("$M, $N")
+	print("Direct:")
+	@time popt = GeostatInversion.pcgadirect(forward, p0, X, xis, R, yobs)
 	@test_approx_eq_eps norm(popt - truep) / norm(truep) 0. 1e-2
+	if M < N / 6
+		print("LSQR:")
+		@time popt = GeostatInversion.pcgalsqr(forward, p0, X, xis, R, yobs)
+		@test_approx_eq_eps norm(popt - truep) / norm(truep) 0. 1e-2
+	end
+	println()
 end
 
 function simpletestrga(M, N, Nreduced)
@@ -35,6 +43,7 @@ function simpletestrga(M, N, Nreduced)
 end
 
 srand(0)
+#simpletestpcga(2 ^ 3, 2 ^ 10)
 maxlog2N = 8
 minlog2N = 2
 for log2N = minlog2N:maxlog2N
