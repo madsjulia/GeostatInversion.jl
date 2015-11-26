@@ -1,6 +1,12 @@
 import GeostatInversion
 import RMF
+import FFTRF
 using Base.Test
+
+function lowrankcovtest()
+	samplefield() = FFTRF.powerlaw_structuredgrid([50, 50], 2., 3.14, -3.5)[1:end]
+	xis = GeostatInversion.getxis(samplefield, 20, 10, 20)
+end
 
 function setupsimpletest(M, N)
 	x = randn(N)
@@ -43,6 +49,7 @@ function simpletestrga(M, N, Nreduced)
 end
 
 srand(0)
+lowrankcovtest()
 #simpletestpcga(2 ^ 3, 2 ^ 10)
 maxlog2N = 8
 minlog2N = 2

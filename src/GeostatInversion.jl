@@ -5,10 +5,29 @@ import IterativeSolvers
 
 include("lowrank.jl")
 
-function getxis(Q::Matrix, K::Int, p::Int, q::Int=3)#K is the number of xis, p is oversampling for randsvd accuracy, q is the number of power iterations -- see review paper by Halko et al
-	xis = Array(Array{Float64, 1}, K)
-	Z = RMF.randsvd(Q, K, p, q)
-	for i = 1:K
+function getxis(samplefield::Function, numfields::Int, numxis::Int, p::Int, q::Int=3)
+	fields = Array(Array{Float64, 1}, numfields)
+	@time for i = 1:numfields
+		fields[i] = samplefield()
+	end
+	lrcm = LowRankCovMatrix(fields)
+	print("low rank time")
+	@time Z = RMF.randsvd(lrcm, numxis, p, q)
+	print("get full time")
+	@time lrcmfull = eye(length(fields[1])) * lrcm
+	print("full time")
+	@time Z = RMF.randsvd(lrcmfull, numxis, p, q)
+	xis = Array(Array{Float64, 1}, numxis)
+	for i = 1:numxis
+		xis[i] = Z[:, i]
+	end
+	return xis
+end
+
+function getxis(Q::Matrix, numxis::Int, p::Int, q::Int=3)#numxis is the number of xis, p is oversampling for randsvd accuracy, q is the number of power iterations -- see review paper by Halko et al
+	xis = Array(Array{Float64, 1}, numxis)
+	Z = RMF.randsvd(Q, numxis, p, q)
+	for i = 1:numxis
 		xis[i] = Z[:, i]
 	end
 	return xis
