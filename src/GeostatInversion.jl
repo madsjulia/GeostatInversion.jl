@@ -7,16 +7,11 @@ include("lowrank.jl")
 
 function getxis(samplefield::Function, numfields::Int, numxis::Int, p::Int, q::Int=3)
 	fields = Array(Array{Float64, 1}, numfields)
-	@time for i = 1:numfields
+	for i = 1:numfields
 		fields[i] = samplefield()
 	end
 	lrcm = LowRankCovMatrix(fields)
-	print("low rank time")
-	@time Z = RMF.randsvd(lrcm, numxis, p, q)
-	print("get full time")
-	@time lrcmfull = eye(length(fields[1])) * lrcm
-	print("full time")
-	@time Z = RMF.randsvd(lrcmfull, numxis, p, q)
+	Z = RMF.randsvd(lrcm, numxis, p, q)
 	xis = Array(Array{Float64, 1}, numxis)
 	for i = 1:numxis
 		xis[i] = Z[:, i]

@@ -8,8 +8,15 @@ type LowRankCovMatrix
 	samples::Array{Array{Float64, 1}, 1}
 	function LowRankCovMatrix(samples::Array{Array{Float64, 1}, 1})
 		zeromeansamples = Array(Array{Float64, 1}, length(samples))
+		means = zeros(Float64, length(samples[1]))
 		for i = 1:length(samples)
-			zeromeansamples[i] = samples[i] - mean(samples[i])
+			for j = 1:length(means)
+				means[j] += samples[i][j]
+			end
+		end
+		means /= length(samples)
+		for i = 1:length(samples)
+			zeromeansamples[i] = samples[i] - means
 		end
 		return new(zeromeansamples)
 	end
@@ -69,11 +76,10 @@ function *(A::PCGALowRankMatrix, x::Vector)
 	return result
 end
 
-
 function *(A::LowRankCovMatrix, B::Matrix)
 	result = zeros(Float64, size(A, 1), size(B, 2))
 	for i = 1:length(A.samples)
-		BLAS.ger!(1., A.samples[i], At_mul_B(B, A.samples[i]), result)
+		BLAS.ger!(1. / (length(A.samples) - 1), A.samples[i], At_mul_B(B, A.samples[i]), result)
 	end
 	return result
 end
@@ -81,7 +87,7 @@ end
 function *(B::Matrix, A::LowRankCovMatrix)
 	result = zeros(Float64, size(B, 1), size(A, 2))
 	for i = 1:length(A.samples)
-		BLAS.ger!(1., B * A.samples[i], A.samples[i], result)
+		BLAS.ger!(1. / (length(A.samples) - 1), B * A.samples[i], A.samples[i], result)
 	end
 	return result
 end
