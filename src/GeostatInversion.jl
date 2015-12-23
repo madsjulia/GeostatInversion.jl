@@ -6,9 +6,10 @@ import IterativeSolvers
 include("lowrank.jl")
 
 function getxis(samplefield::Function, numfields::Int, numxis::Int, p::Int, q::Int=3)
+	fieldsstupidanytype = pmap(i->samplefield(), zeros(numfields))
 	fields = Array(Array{Float64, 1}, numfields)
 	for i = 1:numfields
-		fields[i] = samplefield()
+		fields[i] = fieldsstupidanytype[i]
 	end
 	lrcm = LowRankCovMatrix(fields)
 	Z = RMF.randsvd(lrcm, numxis, p, q)
