@@ -2,6 +2,7 @@ import Base.*
 import Base.eltype
 import Base.size
 import Base.Ac_mul_B!
+import Base.At_mul_B!
 import Base.A_mul_B!
 
 type LowRankCovMatrix
@@ -57,17 +58,22 @@ function A_mul_B!(v::Vector, A::PCGALowRankMatrix, x::Vector)
 	v[1:end - 1] = A.R * xshort
 	v[end] = dot(A.HX, xshort)
 	for i = 1:length(A.etas)
-		#v[1:end - 1] += A.etas[i] * dot(A.etas[i], x[1:end - 1])
 		dotp = dot(A.etas[i], xshort)
 		for j = 1:length(v) - 1
 			v[j] += A.etas[i][j] * dotp
 		end
+	end
+	for j = 1:length(v) - 1
+		v[j] += A.HX[j] * x[end]
 	end
 	return v
 end
 
 function Ac_mul_B!(v::Vector, A::PCGALowRankMatrix, x::Vector)
 	return A_mul_B!(v, A, x)#matrix is symmetric
+end
+function At_mul_B!(v::Vector, A::PCGALowRankMatrix, x::Vector)
+	return A_mul_B!(v, A, x)#A is symmetric
 end
 
 function *(A::PCGALowRankMatrix, x::Vector)

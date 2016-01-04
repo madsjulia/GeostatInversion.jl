@@ -3,6 +3,34 @@ import RMF
 import FFTRF
 using Base.Test
 
+function simplepcgalowranktest(numetas=10, numobs=20)
+	#[(HQH + R) HX; transpose(HX) zeros(p, p)]
+	noiselevels = [1e16, 0.]#none, nuge
+	etagenerators = [zeros, randn]
+	HXgenerators = [zeros, randn]
+	etas = Array(Array{Float64, 1}, numetas)
+	for noiselevel in noiselevels
+		for etagenerator in etagenerators
+			for HXgenerator in HXgenerators
+				HQH = zeros(numobs, numobs)
+				for i = 1:numetas
+					etas[i] = etagenerator(numobs)
+					BLAS.ger!(1., etas[i], etas[i], HQH)
+				end
+				HX = HXgenerator(numobs)
+				R = noiselevel * speye(numobs)
+				bigA = [(HQH + R) HX; transpose(HX) zeros(1, 1)]
+				lrbigA = GeostatInversion.PCGALowRankMatrix(etas, HX, R)
+				for i = 1:numobs + 1
+					x = zeros(numobs + 1)
+					x[i] = 1.
+					@test_approx_eq bigA * x lrbigA * x
+				end
+			end
+		end
+	end
+end
+
 function simplelowrankcovtest()
 	samples = Array{Float64, 1}[[-.5, 0., .5], [1., -1., 0.], [-.5, 1., -.5]]
 	lrcm = GeostatInversion.LowRankCovMatrix(samples)
@@ -62,27 +90,27 @@ function lowrankcovgetxistest()
 	end
 end
 
-function setupsimpletest(M, N)
+function setupsimpletest(M, N, mu)
 	x = randn(N)
 	Q0 = randn(M, N)
 	Q = Q0' * Q0
 	sqrtQ = sqrtm(Q)
-	truep = real(sqrtQ * randn(N))
+	truep = real(sqrtQ * randn(N)) + mu
 	function forward(p::Vector)
 		return p .* x
 	end
 	truey = forward(truep)
 	xis = GeostatInversion.getxis(Q, M, round(Int, 0.1 * M))
-	X = zeros(N)
+	X = fill(mu, N)
 	noiselevel = 0.0001
 	R = noiselevel ^ 2 * speye(N)
 	yobs = truey + noiselevel * randn(N)
-	p0 = zeros(N)
+	p0 = fill(mu, N)
 	return forward, p0, X, xis, R, yobs, truep
 end
 
-function simpletestpcga(M, N)
-	forward, p0, X, xis, R, yobs, truep = setupsimpletest(M, N)
+function simpletestpcga(M, N, mu=0.)
+	forward, p0, X, xis, R, yobs, truep = setupsimpletest(M, N, mu)
 	println("$M, $N")
 	print("Direct:")
 	@time popt = GeostatInversion.pcgadirect(forward, p0, X, xis, R, yobs)
@@ -95,18 +123,22 @@ function simpletestpcga(M, N)
 	println()
 end
 
-function simpletestrga(M, N, Nreduced)
-	forward, p0, X, xis, R, yobs, truep = setupsimpletest(M, N)
+function simpletestrga(M, N, Nreduced, mu=0.)
+	forward, p0, X, xis, R, yobs, truep = setupsimpletest(M, N, mu)
 	S = randn(Nreduced, N) * (1 / sqrt(N))
 	popt = GeostatInversion.rga(forward, p0, X, xis, R, yobs, S)
 	@test_approx_eq_eps norm(popt - truep) / norm(truep) 0. 2e-2
 end
 
 srand(0)
+simplepcgalowranktest()
 simplelowrankcovtest()
 lowrankcovconsistencytest()
 lowrankcovgetxistest()
-#simpletestpcga(2 ^ 3, 2 ^ 10)
+simpletestrga(2 ^ 3, 2 ^ 10, 2 ^ 9)
+simpletestrga(2 ^ 3, 2 ^ 11, 2 ^ 9)
+simpletestrga(2 ^ 3, 2 ^ 10, 2 ^ 9, 10.)
+simpletestrga(2 ^ 3, 2 ^ 11, 2 ^ 9, 10.)
 maxlog2N = 8
 minlog2N = 2
 for log2N = minlog2N:maxlog2N
@@ -114,6 +146,6 @@ for log2N = minlog2N:maxlog2N
 		N = 2 ^ log2N
 		M = 2 ^ log2M
 		simpletestpcga(M, N)
-		simpletestrga(M, N, 2 ^ (log2N - 1))#test reducing the observations by a factor of 2
+		simpletestpcga(M, N, 10.)
 	end
 end
