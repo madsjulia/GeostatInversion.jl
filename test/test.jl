@@ -130,6 +130,14 @@ function simpletestrga(M, N, Nreduced, mu=0.)
 	@test_approx_eq_eps norm(popt - truep) / norm(truep) 0. 2e-2
 end
 
+function simpletestpcgalm(M, N, mu=0.)
+	forward, p0, X, xis, R, yobs, truep = setupsimpletest(M, N, mu)
+	println("$M, $N")
+	print("LM:")
+	@time popt = GeostatInversion.pcgalm(forward, p0, X, xis, diag(R), yobs)
+	@test_approx_eq_eps norm(popt - truep) / norm(truep) 0. 2e-2
+end
+
 srand(0)
 simplepcgalowranktest()
 simplelowrankcovtest()
@@ -147,5 +155,7 @@ for log2N = minlog2N:maxlog2N
 		M = 2 ^ log2M
 		simpletestpcga(M, N)
 		simpletestpcga(M, N, 10.)
+		simpletestpcgalm(M, N)
+		simpletestpcgalm(M, N, 10.)
 	end
 end
