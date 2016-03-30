@@ -1,6 +1,6 @@
 module GeostatInversion
 
-import RMF
+import RandMatFact
 import IterativeSolvers
 import FDDerivatives
 import Optim
@@ -17,7 +17,7 @@ function getxis(samplefield::Function, numfields::Int, numxis::Int, p::Int, q::I
 		fields[i] = fieldsstupidanytype[i]
 	end
 	lrcm = LowRankCovMatrix(fields)
-	Z = RMF.randsvd(lrcm, numxis, p, q)
+	Z = RandMatFact.randsvd(lrcm, numxis, p, q)
 	xis = Array(Array{Float64, 1}, numxis)
 	for i = 1:numxis
 		xis[i] = Z[:, i]
@@ -27,7 +27,7 @@ end
 
 function getxis(Q::Matrix, numxis::Int, p::Int, q::Int=3)#numxis is the number of xis, p is oversampling for randsvd accuracy, q is the number of power iterations -- see review paper by Halko et al
 	xis = Array(Array{Float64, 1}, numxis)
-	Z = RMF.randsvd(Q, numxis, p, q)
+	Z = RandMatFact.randsvd(Q, numxis, p, q)
 	for i = 1:numxis
 		xis[i] = Z[:, i]
 	end

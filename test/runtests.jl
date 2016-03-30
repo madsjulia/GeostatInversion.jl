@@ -1,5 +1,5 @@
 import GeostatInversion
-import RMF
+import RandMatFact
 import FFTRF
 using Base.Test
 
@@ -111,16 +111,12 @@ end
 
 function simpletestpcga(M, N, mu=0.)
 	forward, p0, X, xis, R, yobs, truep = setupsimpletest(M, N, mu)
-	println("$M, $N")
-	print("Direct:")
-	@time popt = GeostatInversion.pcgadirect(forward, p0, X, xis, R, yobs)
+	popt = GeostatInversion.pcgadirect(forward, p0, X, xis, R, yobs)
 	@test_approx_eq_eps norm(popt - truep) / norm(truep) 0. 2e-2
 	if M < N / 6
-		print("LSQR:")
-		@time popt = GeostatInversion.pcgalsqr(forward, p0, X, xis, R, yobs)
+		popt = GeostatInversion.pcgalsqr(forward, p0, X, xis, R, yobs)
 		@test_approx_eq_eps norm(popt - truep) / norm(truep) 0. 2e-2
 	end
-	println()
 end
 
 function simpletestrga(M, N, Nreduced, mu=0.)
@@ -132,9 +128,7 @@ end
 
 function simpletestpcgalm(M, N, mu=0.)
 	forward, p0, X, xis, R, yobs, truep = setupsimpletest(M, N, mu)
-	println("$M, $N")
-	print("LM:")
-	@time popt = GeostatInversion.pcgalm(forward, p0, X, xis, diag(R), yobs)
+	popt = GeostatInversion.pcgalm(forward, p0, X, xis, diag(R), yobs)
 	@test_approx_eq_eps norm(popt - truep) / norm(truep) 0. 2e-2
 end
 
