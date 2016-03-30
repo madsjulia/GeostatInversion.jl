@@ -6,19 +6,19 @@ function getmodelparams(x, X, xis::Array{Array{Float64, 1}})
 	return modelparams
 end
 
-function pcgalm(forwardmodel::Function, s0::Vector, X::Vector, numxis::Int, getmodelparamsshort::Function, Rdiag::Vector, y::Vector; maxiters::Int=5, delta::Float64=sqrt(eps(Float64)), xtol::Float64=1e-6)
+function pcgalm(forwardmodel::Function, s0::Vector, X::Vector, numxis::Int, getmodelparamsshort::Function, Rdiag::Vector, y::Vector; maxiters::Int=100, delta::Float64=sqrt(eps(Float64)), xtol::Float64=1e-6, showtrace=false)
 	function lm_f(x::Vector)
 		modelparams = getmodelparamsshort(x, X)
 		modelpredictions = forwardmodel(modelparams)
 		return sqrt(Rdiag) .* (modelpredictions - y)
 	end
 	lm_g = FDDerivatives.makejacobian(lm_f)
-	opt = Optim.levenberg_marquardt(lm_f, lm_g, [zeros(numxis); 1.]; maxIter=maxiters, show_trace=false)
+	opt = Optim.levenberg_marquardt(lm_f, lm_g, [zeros(numxis); 1.]; maxIter=maxiters, show_trace=showtrace)
 	result = getmodelparamsshort(opt.minimum, X)
 	return result
 end
 
-function pcgalm(forwardmodel::Function, s0::Vector, X::Vector, xis::Array{Array{Float64, 1}, 1}, Rdiag::Vector, y::Vector; maxiters::Int=5, delta::Float64=sqrt(eps(Float64)), xtol::Float64=1e-6)
+function pcgalm(forwardmodel::Function, s0::Vector, X::Vector, xis::Array{Array{Float64, 1}, 1}, Rdiag::Vector, y::Vector; maxiters::Int=100, delta::Float64=sqrt(eps(Float64)), xtol::Float64=1e-6, showtrace=false)
 	masternode = myid()
 	global ___global___geostatinversion___xis = xis
 	function getmodelparamsshort(x, X)
