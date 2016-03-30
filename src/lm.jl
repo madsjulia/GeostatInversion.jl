@@ -13,7 +13,7 @@ function pcgalm(forwardmodel::Function, s0::Vector, X::Vector, numxis::Int, getm
 		return sqrt(Rdiag) .* (modelpredictions - y)
 	end
 	lm_g = FDDerivatives.makejacobian(lm_f)
-	opt = Optim.levenberg_marquardt(lm_f, lm_g, [zeros(numxis); 1.])
+	opt = Optim.levenberg_marquardt(lm_f, lm_g, [zeros(numxis); 1.]; maxIter=maxiters, show_trace=false)
 	result = getmodelparamsshort(opt.minimum, X)
 	return result
 end
@@ -29,15 +29,4 @@ function pcgalm(forwardmodel::Function, s0::Vector, X::Vector, xis::Array{Array{
 	result = pcgalm(forwardmodel, s0, X, length(xis), getmodelparamsshort, Rdiag, y; maxiters=maxiters, delta=delta, xtol=xtol)
 	___global___geostatinversion___xis = nothing
 	return result
-	#=
-	function lm_f(x::Vector)
-		modelparams = getmodelparams(x, X, xis)
-		modelpredictions = forwardmodel(modelparams)
-		return sqrt(Rdiag) .* (modelpredictions - y)
-	end
-	lm_g = FDDerivatives.makejacobian(lm_f)
-	opt = Optim.levenberg_marquardt(lm_f, lm_g, [zeros(length(xis)); 1.])
-	result = getmodelparams(opt.minimum, X, xis)
-	return result
-	=#
 end
