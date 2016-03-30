@@ -4,30 +4,41 @@ import RandMatFact
 import IterativeSolvers
 import FDDerivatives
 import Optim
+import RobustPmap
 
 include("direct.jl")
 include("lowrank.jl")
 include("lsqr.jl")
 include("lm.jl")
 
-function getxis(samplefield::Function, numfields::Int, numxis::Int, p::Int, q::Int=3)
-	fieldsstupidanytype = pmap(i->samplefield(), zeros(numfields))
-	fields = Array(Array{Float64, 1}, numfields)
-	for i = 1:numfields
-		fields[i] = fieldsstupidanytype[i]
-	end
+function randsvdwithseed(Q, numxis, p, q, seed::Void)
+	return RandMatFact.randsvd(Q, numxis, p, q)
+end
+
+function randsvdwithseed(Q, numxis, p, q, seed::Int)
+	srand(seed)
+	return RandMatFact.randsvd(Q, numxis, p, q)
+end
+
+function getxis(::Type{Val{:iwantfields}}, samplefield::Function, numfields::Int, numxis::Int, p::Int, q::Int=3, seed=nothing)
+	fields = RobustPmap.rpmap(i->samplefield(), 1:numfields; t=Array{Float64, 1})
 	lrcm = LowRankCovMatrix(fields)
-	Z = RandMatFact.randsvd(lrcm, numxis, p, q)
+	Z = randsvdwithseed(lrcm, numxis, p, q, seed)
 	xis = Array(Array{Float64, 1}, numxis)
 	for i = 1:numxis
 		xis[i] = Z[:, i]
 	end
+	return xis, fields
+end
+
+function getxis(samplefield::Function, numfields::Int, numxis::Int, p::Int, q::Int=3, seed=nothing)
+	xis, _ = getxis(Val{:iwantfields}, samplefield, numfields, numxis, p, q, seed)
 	return xis
 end
 
-function getxis(Q::Matrix, numxis::Int, p::Int, q::Int=3)#numxis is the number of xis, p is oversampling for randsvd accuracy, q is the number of power iterations -- see review paper by Halko et al
+function getxis(Q::Matrix, numxis::Int, p::Int, q::Int=3, seed=nothing)#numxis is the number of xis, p is oversampling for randsvd accuracy, q is the number of power iterations -- see review paper by Halko et al
 	xis = Array(Array{Float64, 1}, numxis)
-	Z = RandMatFact.randsvd(Q, numxis, p, q)
+	Z = randsvdwithseed(Q, numxis, p, q, seed)
 	for i = 1:numxis
 		xis[i] = Z[:, i]
 	end

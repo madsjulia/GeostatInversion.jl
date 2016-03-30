@@ -1,6 +1,7 @@
 import GeostatInversion
 import RandMatFact
 import FFTRF
+import RobustPmap
 using Base.Test
 
 function simplepcgalowranktest(numetas=10, numobs=20)
@@ -63,22 +64,15 @@ function lowrankcovconsistencytest()
 	@test_approx_eq_eps norm(lrcmfull - covmatrix, 2) 0. M ^ 2 / sqrt(N)
 end
 
-
 function lowrankcovgetxistest()
 	numfields = 100
 	numxis = 30
 	p = 20
 	samplefield() = FFTRF.powerlaw_structuredgrid([25, 25], 2., 3.14, -3.5)[1:end]
-	srand(0)
-	lrcmxis = GeostatInversion.getxis(samplefield, numfields, numxis, p)
-	srand(0)
-	fields = Array(Array{Float64, 1}, numfields)
-	for i = 1:numfields
-		fields[i] = samplefield()
-	end
+	lrcmxis, fields = GeostatInversion.getxis(Val{:iwantfields}, samplefield, numfields, numxis, p, 3, 0)
 	lrcm = GeostatInversion.LowRankCovMatrix(fields)
 	fullcm = eye(size(lrcm, 1)) * lrcm
-	fullxis = GeostatInversion.getxis(fullcm, numxis, p)
+	fullxis = GeostatInversion.getxis(fullcm, numxis, p, 3, 0)
 	for i = 1:length(fullxis)
 		#=
 		Apparently due to minor discrepancies (rounding error), the LU decomposition is not
@@ -86,6 +80,7 @@ function lowrankcovgetxistest()
 		return + or - the singular vectors. We check that it is close to + or - the xis
 		we get from the full matrix.
 		=#
+		#This test is also tricky because the randsvd's in the two getxis calls need to be generating the same random numbers
 		@test_approx_eq_eps 0. min(norm(fullxis[i] - lrcmxis[i]), norm(fullxis[i] + lrcmxis[i])) 1e-6
 	end
 end
@@ -132,7 +127,7 @@ function simpletestpcgalm(M, N, mu=0.)
 	@test_approx_eq_eps norm(popt - truep) / norm(truep) 0. 2e-2
 end
 
-srand(0)
+@everywhere srand(0)
 simplepcgalowranktest()
 simplelowrankcovtest()
 lowrankcovconsistencytest()
