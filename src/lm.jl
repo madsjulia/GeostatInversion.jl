@@ -26,7 +26,7 @@ function pcgalm(forwardmodel::Function, s0::Vector, X::Vector, xis::Array{Array{
 		Xref = @spawnat myid() X
 		return fetch(@spawnat masternode GeostatInversion.getmodelparams(fetch(xref), fetch(Xref), ___global___geostatinversion___xis))
 	end
-	result = pcgalm(forwardmodel, s0, X, length(xis), getmodelparamsshort, Rdiag, y; maxiters=maxiters, delta=delta, xtol=xtol)
+	result = pcgalm(forwardmodel, s0, X, length(xis), getmodelparamsshort, Rdiag, y; maxiters=maxiters, delta=delta, xtol=xtol, showtrace=showtrace)
 	___global___geostatinversion___xis = nothing
 	return result
 end
