@@ -10,7 +10,7 @@ function pcgalm(forwardmodel::Function, s0::Vector, X::Vector, numxis::Int, getm
 	function lm_f(x::Vector)
 		modelparams = getmodelparamsshort(x, X)
 		modelpredictions = forwardmodel(modelparams)
-		return sqrt(Rdiag) .* (modelpredictions - y)
+		return (modelpredictions - y) ./ sqrt(Rdiag)
 	end
 	lm_g = FDDerivatives.makejacobian(lm_f)
 	opt = Optim.levenberg_marquardt(lm_f, lm_g, [zeros(numxis); 1.]; maxIter=maxiters, show_trace=showtrace)
