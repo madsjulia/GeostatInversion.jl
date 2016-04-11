@@ -116,8 +116,5 @@ end
 
 function \(A::LowRankCovMatrix, b::Vector)
 	result, c = IterativeSolvers.lsqr(A, b; maxiter=length(A.samples))
-	if !c.isconverged
-		warn("LowRankCovMatrix linear solve may not have converged")
-	end
 	return result
 end
