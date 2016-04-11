@@ -62,6 +62,10 @@ function lowrankcovconsistencytest()
 	lrcm = GeostatInversion.LowRankCovMatrix(samples)
 	lrcmfull = lrcm * eye(M)
 	@test_approx_eq_eps norm(lrcmfull - covmatrix, 2) 0. M ^ 2 / sqrt(N)
+	for i = 1:100
+		x = randn(M)
+		@test_approx_eq lrcm * x lrcmfull * x
+	end
 end
 
 function lowrankcovgetxistest()

@@ -4,6 +4,7 @@ import Base.size
 import Base.Ac_mul_B!
 import Base.At_mul_B!
 import Base.A_mul_B!
+import Base.\
 
 type LowRankCovMatrix
 	samples::Array{Array{Float64, 1}, 1}
@@ -53,6 +54,14 @@ function size(A::PCGALowRankMatrix, i::Int)
 	end
 end
 
+function A_mul_B!(v::Vector, A::LowRankCovMatrix, x::Vector)
+	fill!(v, 0.)
+	for i = 1:length(A.samples)
+		BLAS.axpy!(1. / (length(A.samples) - 1), A.samples[i] * dot(x, A.samples[i]), v)
+	end
+	return v
+end
+
 function A_mul_B!(v::Vector, A::PCGALowRankMatrix, x::Vector)
 	xshort = x[1:end - 1]
 	v[1:end - 1] = A.R * xshort
@@ -69,10 +78,11 @@ function A_mul_B!(v::Vector, A::PCGALowRankMatrix, x::Vector)
 	return v
 end
 
-function Ac_mul_B!(v::Vector, A::PCGALowRankMatrix, x::Vector)
+function Ac_mul_B!(v::Vector, A::Union{LowRankCovMatrix, PCGALowRankMatrix}, x::Vector)
 	return A_mul_B!(v, A, x)#matrix is symmetric
 end
-function At_mul_B!(v::Vector, A::PCGALowRankMatrix, x::Vector)
+
+function At_mul_B!(v::Vector, A::Union{LowRankCovMatrix, PCGALowRankMatrix}, x::Vector)
 	return A_mul_B!(v, A, x)#A is symmetric
 end
 
@@ -94,6 +104,20 @@ function *(B::Matrix, A::LowRankCovMatrix)
 	result = zeros(Float64, size(B, 1), size(A, 2))
 	for i = 1:length(A.samples)
 		BLAS.ger!(1. / (length(A.samples) - 1), B * A.samples[i], A.samples[i], result)
+	end
+	return result
+end
+
+function *(A::LowRankCovMatrix, x::Vector)
+	result = zeros(Float64, size(A, 1))
+	A_mul_B!(result, A, x)
+	return result
+end
+
+function \(A::LowRankCovMatrix, b::Vector)
+	result, c = IterativeSolvers.lsqr(A, b; maxiter=length(A.samples))
+	if !c.isconverged
+		warn("LowRankCovMatrix linear solve may not have converged")
 	end
 	return result
 end
