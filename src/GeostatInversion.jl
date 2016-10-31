@@ -45,6 +45,12 @@ function getxis(Q::Matrix, numxis::Int, p::Int, q::Int=3, seed=nothing)#numxis i
 	return xis
 end
 
+function srga(forwardmodel::Function, s0::Vector, X::Vector, xis::Array{Array{Float64, 1}, 1}, R, y::Vector, Kred; maxiters::Int=5, delta::Float64=sqrt(eps(Float64)), xtol::Float64=1e-6, pcgafunc=pcgadirect)
+	S = sprand(Kred, length(y), ceil(Int, log(length(y))) / Kred)
+	scale!(S, 1 / sqrt(length(y)))
+	return pcgafunc(x->S * forwardmodel(x), s0, X, xis, S * R * S', S * y; maxiters=maxiters, delta=delta, xtol=xtol)
+end
+
 function rga(forwardmodel::Function, s0::Vector, X::Vector, xis::Array{Array{Float64, 1}, 1}, R, y::Vector, S; maxiters::Int=5, delta::Float64=sqrt(eps(Float64)), xtol::Float64=1e-6, pcgafunc=pcgadirect)
 	return pcgafunc(x->S * forwardmodel(x), s0, X, xis, S * R * S', S * y; maxiters=maxiters, delta=delta, xtol=xtol)
 end
