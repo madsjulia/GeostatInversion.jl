@@ -8,14 +8,14 @@
 #Optional Args
 #maxIter - maximum # of PCGA iterations
 #delta - the finite difference step size
-function pcgadirect(forwardmodel::Function, s0::Vector, X::Vector, xis::Array{Array{Float64, 1}, 1}, R, y::Vector; maxiters::Int=5, delta::Float64=sqrt(eps(Float64)), xtol::Float64=1e-6)
+function pcgadirect(forwardmodel::Function, s0::Vector, X::Vector, xis::Array{Array{Float64, 1}, 1}, R, y::Vector; maxiters::Int=5, delta::Float64=sqrt(eps(Float64)), xtol::Float64=1e-6, callback=(s, obs_cal)->nothing)
 	HQH = Array(Float64, length(y), length(y))
 	converged = false
 	s = s0
 	itercount = 0
 	while !converged && itercount < maxiters
 		olds = s
-		s = pcgadirectiteration!(HQH, forwardmodel, s, X, xis, R, y, delta)
+		s = pcgadirectiteration!(HQH, forwardmodel, s, X, xis, R, y, delta, callback)
 		if norm(s - olds) < xtol
 			converged = true
 		end
@@ -24,7 +24,7 @@ function pcgadirect(forwardmodel::Function, s0::Vector, X::Vector, xis::Array{Ar
 	return s
 end
 
-function pcgadirectiteration!(HQH::Matrix, forwardmodel::Function, s::Vector, X::Vector, xis::Array{Array{Float64, 1}, 1}, R, y::Vector, delta::Float64)
+function pcgadirectiteration!(HQH::Matrix, forwardmodel::Function, s::Vector, X::Vector, xis::Array{Array{Float64, 1}, 1}, R, y::Vector, delta::Float64, callback)
 	p = 1#p = 1 because X is a vector rather than a full matrix
 	paramstorun = Array(Array{Float64, 1}, length(xis) + 3)
 	for i = 1:length(xis)
@@ -34,6 +34,7 @@ function pcgadirectiteration!(HQH::Matrix, forwardmodel::Function, s::Vector, X:
 	paramstorun[length(xis) + 2] = s + delta * s
 	paramstorun[length(xis) + 3] = s
 	results = pmap(forwardmodel, paramstorun) 
+	callback(s, results[length(xis) + 3])
 	hs = results[length(xis) + 3]
 	fill!(HQH, 0.)
 	for i = 1:length(xis)
