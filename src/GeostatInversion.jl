@@ -3,13 +3,12 @@ module GeostatInversion
 import RandMatFact
 import IterativeSolvers
 import FDDerivatives
-import Optim
 import RobustPmap
 
 include("direct.jl")
 include("lowrank.jl")
 include("lsqr.jl")
-include("lm.jl")
+#include("lm.jl")
 
 function randsvdwithseed(Q, numxis, p, q, seed::Void)
 	return RandMatFact.randsvd(Q, numxis, p, q)

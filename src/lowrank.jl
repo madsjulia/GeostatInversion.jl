@@ -5,6 +5,7 @@ import Base.Ac_mul_B!
 import Base.At_mul_B!
 import Base.A_mul_B!
 import Base.\
+import Base.transpose
 
 type LowRankCovMatrix
 	samples::Array{Array{Float64, 1}, 1}
@@ -28,6 +29,10 @@ type PCGALowRankMatrix
 	etas::Array{Array{Float64, 1}, 1}
 	HX::Array{Float64, 1}
 	R
+end
+
+function transpose(A::LowRankCovMatrix)
+	return A
 end
 
 function eltype(A::Union{PCGALowRankMatrix, LowRankCovMatrix})
