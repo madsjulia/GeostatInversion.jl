@@ -14,31 +14,31 @@ function rangefinder(A; epsilon=1e-8, r=10)#implements algorithm 4.2 in halko et
 	m = size(A, 1)
 	n = size(A, 2)
 	Yfull = zeros(Float64, n, r + min(n, m))
-	Y = slice(Yfull, :, 1:r)
+	Y = view(Yfull, :, 1:r)
 	BLAS.gemm!('N', 'N', 1., A, randn(n, r), 0., Y)
 	omega = Array(Float64, n)
 	j = 0
 	Qfull = zeros(Float64, m, min(n, m))
 	tempvec = Array(Float64, m)
 	Aomega = Array(Float64, m)
-	while maximum(colnorms(slice(Yfull, :, j+1:j+r))) > epsilon / sqrt(200 / pi)
+	while maximum(colnorms(view(Yfull, :, j+1:j+r))) > epsilon / sqrt(200 / pi)
 		j = j + 1
-		Yj = slice(Yfull, :, j)
-		Q = slice(Qfull, :, 1:j - 1)
+		Yj = view(Yfull, :, j)
+		Q = view(Qfull, :, 1:j - 1)
 		QtYj = BLAS.gemv('T', 1., Q, Yj)
 		Yj -= Q * QtYj
 		q = Yj / norm(Yj)
-		Qj = slice(Qfull, :, j)
+		Qj = view(Qfull, :, j)
 		BLAS.axpy!(1 / norm(Yj), Yj, Qj)
-		Q = slice(Qfull, :, 1:j)
+		Q = view(Qfull, :, 1:j)
 		randn!(omega)
 		Aomega = BLAS.gemv!('N', 1., A, omega, 0., Aomega)
 		QtAomega = BLAS.gemv('T', 1., Q, Aomega)
 		ynew = Aomega - Q * QtAomega
 		Yfull[:, r + j] = ynew
-		Qj = slice(Qfull, :, j)
+		Qj = view(Qfull, :, j)
 		for i = j + 1:j + r - 1
-			Yi = slice(Yfull, :, i)
+			Yi = view(Yfull, :, i)
 			BLAS.axpy!(-dot(Qj, Yi), Qj, Yi)
 		end
 	end
@@ -85,7 +85,7 @@ end
 function eig_nystrom(A, Q)#implements algorithm 5.5 from halko et al
 	B1 = A * Q
 	B2 = ctranspose(Q) * B1
-	C = chol(B2, Val{:U})
+	C = chol(Hermitian(B2))
 	F = B1 * inv(C)#this should be replaced by triangular solve if it is slowing things down
 	U, Sigmavec, V = svd(F)
 	#Sigma = diagm(Sigmavec)
