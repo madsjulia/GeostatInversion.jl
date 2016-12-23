@@ -31,6 +31,24 @@ function getxis(::Type{Val{:iwantfields}}, samplefield::Function, numfields::Int
 	return xis, fields
 end
 
+"""
+Get the parameter subspace that will be explored during the inverse analysis
+
+```
+getxis(samplefield::Function, numfields::Int, numxis::Int, p::Int, q::Int=3, seed=nothing)
+getxis(Q::Matrix, numxis::Int, p::Int, q::Int=3, seed=nothing)
+```
+
+Arguments:
+
+- samplefield : a function that takes no arguments and returns a sample of the field
+- Q : the covariance matrix of the parameter field
+- numfields : the number of fields that will be used to find the subspace
+- numxis : the dimension of the subspace
+- p : oversampling parameter when estimating the range of the covariance matrix (see Halko et al, SIAM Rev., 2011)
+- q : number of power iterations when estimating the range of the covariance matrix (see Halko et al, SIAM Rev., 2011)
+- seed : an optional seed to use when doing the randomized matrix factorization
+"""
 function getxis(samplefield::Function, numfields::Int, numxis::Int, p::Int, q::Int=3, seed=nothing)
 	xis, _ = getxis(Val{:iwantfields}, samplefield, numfields, numxis, p, q, seed)
 	return xis
