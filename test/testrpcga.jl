@@ -1,5 +1,5 @@
 import GeostatInversion
-import FFTRF
+const FFTRF = GeostatInversion.FFTRF
 import RobustPmap
 using Base.Test
 

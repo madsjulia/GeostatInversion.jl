@@ -1,7 +1,5 @@
 module RandMatFact
 
-export rangefinder, eig_nystrom
-
 function colnorms(Y)
 	norms = Array(Float64, size(Y, 2))
 	for i = 1:size(Y, 2)

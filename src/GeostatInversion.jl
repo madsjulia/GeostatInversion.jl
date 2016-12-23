@@ -1,11 +1,11 @@
 module GeostatInversion
 
-#import RandMatFact
 import IterativeSolvers
 import FDDerivatives
 import RobustPmap
 
 include("direct.jl")
+include("fftrf.jl")
 include("lowrank.jl")
 include("lsqr.jl")
 #include("lm.jl")
