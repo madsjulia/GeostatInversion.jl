@@ -1,3 +1,22 @@
+"""
+Iterative principal component geostatistical approach
+
+```
+pcgalsqr(forwardmodel::Function, s0::Vector, X::Vector, xis::Array{Array{Float64, 1}, 1}, R, y::Vector; maxiters::Int=5, delta::Float64=sqrt(eps(Float64)), xtol::Float64=1e-6)
+```
+
+Arguments:
+
+- forwardmodel : param to obs map h(s)
+- s0 : initial guess
+- X : mean of parameter prior (replace with B*X drift matrix later for p>1)
+- xis : K columns of Z = randSVDzetas(Q,K,p,q) where Q is the parameter covariance matrix
+- R : covariance of measurement error (data misfit term)
+- y : data vector
+- maxiters : maximum # of PCGA iterations
+- delta : the finite difference step size
+- xtol : convergence tolerence for the parameters
+"""
 function pcgalsqr(forwardmodel::Function, s0::Vector, X::Vector, xis::Array{Array{Float64, 1}, 1}, R, y::Vector; maxiters::Int=5, delta::Float64=sqrt(eps(Float64)), xtol::Float64=1e-6)
 	converged = false
 	s = s0

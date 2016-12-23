@@ -1,13 +1,23 @@
-#Inputs: 
-#forwardmodel - param to obs map h(s)
-#s0 - initial guess
-#X - mean of parameter prior (replace with B*X drift matrix later for p>1)
-#xis - K columns of Z = randSVDzetas(Q,K,p,q) where Q approx= ZZ^T
-#R - covariance of measurement error (data misfit term)
-#y - data vector
-#Optional Args
-#maxIter - maximum # of PCGA iterations
-#delta - the finite difference step size
+"""
+Direct principal component geostatistical approach
+
+```
+pcgadirect(forwardmodel::Function, s0::Vector, X::Vector, xis::Array{Array{Float64, 1}, 1}, R, y::Vector; maxiters::Int=5, delta::Float64=sqrt(eps(Float64)), xtol::Float64=1e-6, callback=(s, obs_cal)->nothing)
+```
+
+Arguments:
+
+- forwardmodel : param to obs map h(s)
+- s0 : initial guess
+- X : mean of parameter prior (replace with B*X drift matrix later for p>1)
+- xis : K columns of Z = randSVDzetas(Q,K,p,q) where Q is the parameter covariance matrix
+- R : covariance of measurement error (data misfit term)
+- y : data vector
+- maxiters : maximum # of PCGA iterations
+- delta : the finite difference step size
+- xtol : convergence tolerence for the parameters
+- callback : a function of the form `(params, observations)->...` that is called during each iteration
+"""
 function pcgadirect(forwardmodel::Function, s0::Vector, X::Vector, xis::Array{Array{Float64, 1}, 1}, R, y::Vector; maxiters::Int=5, delta::Float64=sqrt(eps(Float64)), xtol::Float64=1e-6, callback=(s, obs_cal)->nothing)
 	HQH = Array(Float64, length(y), length(y))
 	converged = false

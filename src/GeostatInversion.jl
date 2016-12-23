@@ -51,6 +51,28 @@ function srga(forwardmodel::Function, s0::Vector, X::Vector, xis::Array{Array{Fl
 	return pcgafunc(x->S * forwardmodel(x), s0, X, xis, S * R * S', S * y; maxiters=maxiters, delta=delta, xtol=xtol, callback=callback)
 end
 
+"""
+Randomized (principal component) geostatistical approach
+
+```
+function rga(forwardmodel::Function, s0::Vector, X::Vector, xis::Array{Array{Float64, 1}, 1}, R, y::Vector, S; maxiters::Int=5, delta::Float64=sqrt(eps(Float64)), xtol::Float64=1e-6, pcgafunc=pcgadirect, callback=(s, obs_cal)->nothing)
+```
+
+Arguments:
+
+- forwardmodel : param to obs map h(s)
+- s0 : initial guess
+- X : mean of parameter prior (replace with B*X drift matrix later for p>1)
+- xis : K columns of Z = randSVDzetas(Q,K,p,q) where Q is the parameter covariance matrix
+- R : covariance of measurement error (data misfit term)
+- y : data vector
+- S : sketching matrix
+- maxiters : maximum # of PCGA iterations
+- delta : the finite difference step size
+- xtol : convergence tolerence for the parameters
+- callback : a function of the form `(params, observations)->...` that is called during each iteration
+
+"""
 function rga(forwardmodel::Function, s0::Vector, X::Vector, xis::Array{Array{Float64, 1}, 1}, R, y::Vector, S; maxiters::Int=5, delta::Float64=sqrt(eps(Float64)), xtol::Float64=1e-6, pcgafunc=pcgadirect, callback=(s, obs_cal)->nothing)
 	return pcgafunc(x->S * forwardmodel(x), s0, X, xis, S * R * S', S * y; maxiters=maxiters, delta=delta, xtol=xtol, callback=callback)
 end
