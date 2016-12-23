@@ -1,6 +1,6 @@
 module GeostatInversion
 
-import RandMatFact
+#import RandMatFact
 import IterativeSolvers
 import FDDerivatives
 import RobustPmap
@@ -9,6 +9,7 @@ include("direct.jl")
 include("lowrank.jl")
 include("lsqr.jl")
 #include("lm.jl")
+include("rmf.jl")
 
 function randsvdwithseed(Q, numxis, p, q, seed::Void)
 	return RandMatFact.randsvd(Q, numxis, p, q)

@@ -1,5 +1,4 @@
 import GeostatInversion
-import RandMatFact
 import FFTRF
 import RobustPmap
 using Base.Test
