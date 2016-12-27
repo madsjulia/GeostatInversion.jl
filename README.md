@@ -7,10 +7,15 @@ GeostatInversion
 
 [![Coverage Status](https://coveralls.io/repos/madsjulia/GeostatInversion.jl/badge.svg?branch=master)](https://coveralls.io/r/madsjulia/GeostatInversion.jl?branch=master)
 
-This package provides methods for doing inverse analysis with parameter fields that are modeled using geostatistics.
-Currently, two methods are implemented.
-One is the principal component geostatistical approach (PCGA) of [Kitanidis](http://dx.doi.org/10.1002/2013WR014630) & [Lee](http://dx.doi.org/10.1002/2014WR015483).
-The other utilizes a randomized geostatistical approach (RGA) that builds on PCGA (a reference for this method is forthcoming).
+This package provides methods for inverse analysis using parameter fields that are represented using geostatistical (stochastic) methods.
+Currently, two geostatistical methods are implemented.
+One is the Principal Component Geostatistical Approach (PCGA) proposed by [Kitanidis](http://dx.doi.org/10.1002/2013WR014630) & [Lee](http://dx.doi.org/10.1002/2014WR015483).
+The other utilizes a Randomized Geostatistical Approach (RGA) that builds on PCGA.
+
+Randomized Geostatistical Approach (RGA) references:
+
+[O'Malley, D., Le, E., Vesselinov, V.V., Fast Geostatistical Inversion using Randomized Matrix Decompositions and Sketchings for Heterogeneous Aquifer Characterization, AGU Fall Meeting, San Francisco, CA, December 14–18, 2015.](http://adsabs.harvard.edu/abs/2015AGUFM.T31E..03O)
+[Lin, Y, Le, E.B, O'Malley, D., Vesselinov, V.V., Bui-Thanh, T., Large-Scale Inverse Model Analyses Employing Fast Randomized Data Reduction, 2016.](submitted)
 
 Two versions of PCGA are implemented in this package
 
