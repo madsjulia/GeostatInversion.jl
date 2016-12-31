@@ -8,7 +8,6 @@ function makeA(n, m)
 	return range * other
 end
 
-
 function test_rangefinder(n, m)
 	A = makeA(n, m)
 	Q = RandMatFact.rangefinder(A)

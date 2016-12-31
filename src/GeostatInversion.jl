@@ -3,13 +3,14 @@ module GeostatInversion
 import IterativeSolvers
 import RobustPmap
 
+include("FFTRF.jl")
+include("RandMatFact.jl")
+include("FDDerivatives.jl")
+
 include("direct.jl")
-include("fd.jl")
-include("fftrf.jl")
 include("lowrank.jl")
 include("lsqr.jl")
 #include("lm.jl")
-include("rmf.jl")
 
 function randsvdwithseed(Q, numxis, p, q, seed::Void)
 	return RandMatFact.randsvd(Q, numxis, p, q)
@@ -72,6 +73,8 @@ end
 """
 Randomized (principal component) geostatistical approach
 
+Example:
+
 ```
 function rga(forwardmodel::Function, s0::Vector, X::Vector, xis::Array{Array{Float64, 1}, 1}, R, y::Vector, S; maxiters::Int=5, delta::Float64=sqrt(eps(Float64)), xtol::Float64=1e-6, pcgafunc=pcgadirect, callback=(s, obs_cal)->nothing)
 ```
@@ -87,9 +90,8 @@ Arguments:
 - S : sketching matrix
 - maxiters : maximum # of PCGA iterations
 - delta : the finite difference step size
-- xtol : convergence tolerence for the parameters
+- xtol : convergence tolerance for the parameters
 - callback : a function of the form `(params, observations)->...` that is called during each iteration
-
 """
 function rga(forwardmodel::Function, s0::Vector, X::Vector, xis::Array{Array{Float64, 1}, 1}, R, y::Vector, S; maxiters::Int=5, delta::Float64=sqrt(eps(Float64)), xtol::Float64=1e-6, pcgafunc=pcgadirect, callback=(s, obs_cal)->nothing)
 	return pcgafunc(x->S * forwardmodel(x), s0, X, xis, S * R * S', S * y; maxiters=maxiters, delta=delta, xtol=xtol, callback=callback)
