@@ -3,6 +3,7 @@ module FFTRF
 import Grid
 import Base.Cartesian
 
+"Reduce k"
 @generated function reducek(k, dimensionvaltype)
 	if dimensionvaltype == Type{Val{2}}
 		setupfinalk = :(finalk = Array(Float64, div(size(k, 2), 2), div(size(k, 1), 2)))

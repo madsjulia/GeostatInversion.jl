@@ -1,6 +1,9 @@
+"Finite Difference Derivatives"
 module FDDerivatives
 
-function makejacobian(f, h=sqrt(eps(Float64)))
+"Create Jacobian function"
+function makejacobian(f::Function, h::Float64=sqrt(eps(Float64)))
+	@doc "Jacobian function" ->
 	function jacobian(x::Vector)
 		xphs = Array(Array{Float64, 1}, length(x) + 1)
 		for i = 1:length(x)
@@ -18,7 +21,9 @@ function makejacobian(f, h=sqrt(eps(Float64)))
 	end
 end
 
-function makegradient(f, h=sqrt(eps(Float64)))
+"Create Gradient function"
+function makegradient(f::Function, h::Float64=sqrt(eps(Float64)))
+	@doc "Gradient function" ->
 	function gradient(x::Vector)
 		xphs = Array(Array{Float64, 1}, length(x) + 1)
 		for i = 1:length(x)

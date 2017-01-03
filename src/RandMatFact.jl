@@ -1,3 +1,4 @@
+"Random Matrix Factorization Functions"
 module RandMatFact
 
 function colnorms(Y)
@@ -71,16 +72,17 @@ function rangefinder(A, l::Int64, numiterations::Int64)
 	return Q
 end
 
+"Random SVD based on algorithm 5.1 from Halko et al."
 function randsvd(A, K::Int, p::Int, q::Int)
 	Q = rangefinder(A, K + p, q);
 	B = Q' * A;
 	(), S, V = svd(B);#This is algorithm 5.1 from Halko et al, Direct SVD
 	Sh = diagm(sqrt([S[1:K]; zeros(p)]))#Cut back to K from K+p
-	Z = V * Sh 
+	Z = V * Sh
 	return Z
-end  
+end
 
-function eig_nystrom(A, Q)#implements algorithm 5.5 from halko et al
+function eig_nystrom(A, Q)#implements algorithm 5.5 from Halko et al
 	B1 = A * Q
 	B2 = ctranspose(Q) * B1
 	C = chol(Hermitian(B2))
