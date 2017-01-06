@@ -1,4 +1,3 @@
-"Finite Difference Derivatives"
 module FDDerivatives
 
 "Create Jacobian function"
