@@ -1,7 +1,6 @@
 import GeostatInversion
-const FFTRF = GeostatInversion.FFTRF
 import RobustPmap
-using Base.Test
+import Base.Test
 
 function simplepcgalowranktest(numetas=10, numobs=20)
 	#[(HQH + R) HX; transpose(HX) zeros(p, p)]
@@ -35,13 +34,13 @@ function simplelowrankcovtest()
 	samples = Array{Float64, 1}[[-.5, 0., .5], [1., -1., 0.], [-.5, 1., -.5]]
 	lrcm = GeostatInversion.LowRankCovMatrix(samples)
 	fullcm = eye(3) * lrcm
-	@test_approx_eq fullcm lrcm * eye(3)
-	@test_approx_eq sum(map(x->x * x', samples)) / (length(samples) - 1) fullcm
-	@test_approx_eq sum(map(x->x * x', samples)) / (length(samples) - 1) fullcm
+	@Base.Test.test_approx_eq fullcm lrcm * eye(3)
+	@Base.Test.test_approx_eq Base.sum(map(x->x * x', samples)) / (length(samples) - 1) fullcm
+	@Base.Test.test_approx_eq Base.sum(map(x->x * x', samples)) / (length(samples) - 1) fullcm
 	for i = 1:100
 		x = randn(3, 3)
-		@test_approx_eq fullcm * x lrcm * x
-		@test_approx_eq fullcm' * x lrcm' * x
+		@Base.Test.test_approx_eq fullcm * x lrcm * x
+		@Base.Test.test_approx_eq fullcm' * x lrcm' * x
 	end
 end
 
@@ -60,10 +59,10 @@ function lowrankcovconsistencytest()
 	end
 	lrcm = GeostatInversion.LowRankCovMatrix(samples)
 	lrcmfull = lrcm * eye(M)
-	@test_approx_eq_eps norm(lrcmfull - covmatrix, 2) 0. M ^ 2 / sqrt(N)
+	@Base.Test.test_approx_eq_eps norm(lrcmfull - covmatrix, 2) 0. M ^ 2 / sqrt(N)
 	for i = 1:100
 		x = randn(M)
-		@test_approx_eq lrcm * x lrcmfull * x
+		@Base.Test.test_approx_eq lrcm * x lrcmfull * x
 	end
 end
 
@@ -71,7 +70,7 @@ function lowrankcovgetxistest()
 	numfields = 100
 	numxis = 30
 	p = 20
-	samplefield() = FFTRF.powerlaw_structuredgrid([25, 25], 2., 3.14, -3.5)[1:end]
+	samplefield() = GeostatInversion.FFTRF.powerlaw_structuredgrid([25, 25], 2., 3.14, -3.5)[1:end]
 	lrcmxis, fields = GeostatInversion.getxis(Val{:iwantfields}, samplefield, numfields, numxis, p, 3, 0)
 	lrcm = GeostatInversion.LowRankCovMatrix(fields)
 	fullcm = eye(size(lrcm, 1)) * lrcm
@@ -84,7 +83,7 @@ function lowrankcovgetxistest()
 		we get from the full matrix.
 		=#
 		#This test is also tricky because the randsvd's in the two getxis calls need to be generating the same random numbers
-		@test_approx_eq_eps 0. min(norm(fullxis[i] - lrcmxis[i]), norm(fullxis[i] + lrcmxis[i])) 1e-6
+		@Base.Test.test_approx_eq_eps 0. min(norm(fullxis[i] - lrcmxis[i]), norm(fullxis[i] + lrcmxis[i])) 1e-6
 	end
 end
 
@@ -110,10 +109,10 @@ end
 function simpletestpcga(M, N, mu=0.)
 	forward, p0, X, xis, R, yobs, truep = setupsimpletest(M, N, mu)
 	popt = GeostatInversion.pcgadirect(forward, p0, X, xis, R, yobs)
-	@test_approx_eq_eps norm(popt - truep) / norm(truep) 0. 2e-2
+	@Base.Test.test_approx_eq_eps norm(popt - truep) / norm(truep) 0. 2e-2
 	if M < N / 6
 		popt = GeostatInversion.pcgalsqr(forward, p0, X, xis, R, yobs)
-		@test_approx_eq_eps norm(popt - truep) / norm(truep) 0. 2e-2
+		@Base.Test.test_approx_eq_eps norm(popt - truep) / norm(truep) 0. 2e-2
 	end
 end
 
@@ -121,14 +120,14 @@ function simpletestrga(M, N, Nreduced, mu=0.)
 	forward, p0, X, xis, R, yobs, truep = setupsimpletest(M, N, mu)
 	S = randn(Nreduced, N) * (1 / sqrt(N))
 	popt = GeostatInversion.rga(forward, p0, X, xis, R, yobs, S)
-	@test_approx_eq_eps norm(popt - truep) / norm(truep) 0. 2e-2
+	@Base.Test.test_approx_eq_eps norm(popt - truep) / norm(truep) 0. 2e-2
 end
 
 #=
 function simpletestpcgalm(M, N, mu=0.)
 	forward, p0, X, xis, R, yobs, truep = setupsimpletest(M, N, mu)
 	popt = GeostatInversion.pcgalm(forward, p0, X, xis, diag(R), yobs)
-	@test_approx_eq_eps norm(popt - truep) / norm(truep) 0. 2e-2
+	@Base.Test.test_approx_eq_eps norm(popt - truep) / norm(truep) 0. 2e-2
 end
 =#
 
