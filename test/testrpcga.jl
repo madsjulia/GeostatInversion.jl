@@ -23,7 +23,7 @@ function simplepcgalowranktest(numetas=10, numobs=20)
 				for i = 1:numobs + 1
 					x = zeros(numobs + 1)
 					x[i] = 1.
-					@test_approx_eq bigA * x lrbigA * x
+					@Base.Test.test_approx_eq bigA * x lrbigA * x
 				end
 			end
 		end

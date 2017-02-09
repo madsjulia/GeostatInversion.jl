@@ -1,16 +1,15 @@
-using Base.Test
 import GeostatInversion
-const FFTRF = GeostatInversion.FFTRF
+import Base.Test
 
 function testNd(N)
 	Ns = map(x->round(Int, 25 * x), 1 + rand(N))
 	k0 = randn()
 	dk = rand()
 	beta = -2 - rand()
-	k = FFTRF.powerlaw_structuredgrid(Ns, k0, dk, beta)
-	@test_approx_eq mean(k) k0
-	@test_approx_eq std(k) dk
-	@test collect(size(k)) == Ns
+	k = GeostatInversion.FFTRF.powerlaw_structuredgrid(Ns, k0, dk, beta)
+	@Base.Test.test_approx_eq mean(k) k0
+	@Base.Test.test_approx_eq std(k) dk
+	@Base.Test.test collect(size(k)) == Ns
 end
 
 function testunstructured(N)
@@ -19,8 +18,8 @@ function testunstructured(N)
 	k0 = randn()
 	dk = rand()
 	beta = -2 - rand()
-	k = FFTRF.powerlaw_unstructuredgrid(points, Ns, k0, dk, beta)
-	@test length(k) == size(points, 2)
+	k = GeostatInversion.FFTRF.powerlaw_unstructuredgrid(points, Ns, k0, dk, beta)
+	@Base.Test.test length(k) == size(points, 2)
 end
 
 srand(0)
