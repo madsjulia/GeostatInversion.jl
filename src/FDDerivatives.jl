@@ -3,14 +3,14 @@ module FDDerivatives
 "Create Jacobian function"
 function makejacobian(f::Function, h::Float64=sqrt(eps(Float64)))
 	function jacobian(x::Vector)
-		xphs = Array(Array{Float64, 1}, length(x) + 1)
+		xphs = Array{Array{Float64, 1}}(length(x) + 1)
 		for i = 1:length(x)
 			xphs[i] = copy(x)
 			xphs[i][i] += h
 		end
 		xphs[end] = copy(x)
 		ys = pmap(f, xphs)
-		J = Array(eltype(ys[1]), length(ys[1]), length(x))
+		J = Array{eltype(ys[1])}(length(ys[1]), length(x))
 		for i = 1:length(x)
 			J[:, i] = ys[i] - ys[end]
 		end
@@ -22,14 +22,14 @@ end
 "Create Gradient function"
 function makegradient(f::Function, h::Float64=sqrt(eps(Float64)))
 	function gradient(x::Vector)
-		xphs = Array(Array{Float64, 1}, length(x) + 1)
+		xphs = Array{Array{Float64, 1}}(length(x) + 1)
 		for i = 1:length(x)
 			xphs[i] = copy(x)
 			xphs[i][i] += h
 		end
 		xphs[end] = copy(x)
 		ys = pmap(f, xphs)
-		grad = Array(eltype(ys), length(x))
+		grad = Array{eltype(ys)}(length(x))
 		for i = 1:length(x)
 			grad[i] = ys[i] - ys[end]
 		end

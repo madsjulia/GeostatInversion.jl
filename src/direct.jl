@@ -19,7 +19,7 @@ Arguments:
 - callback : a function of the form `(params, observations)->...` that is called during each iteration
 """
 function pcgadirect(forwardmodel::Function, s0::Vector, X::Vector, xis::Array{Array{Float64, 1}, 1}, R, y::Vector; maxiters::Int=5, delta::Float64=sqrt(eps(Float64)), xtol::Float64=1e-6, callback=(s, obs_cal)->nothing)
-	HQH = Array(Float64, length(y), length(y))
+	HQH = Array{Float64}(length(y), length(y))
 	converged = false
 	s = s0
 	itercount = 0
@@ -36,14 +36,14 @@ end
 
 function pcgadirectiteration!(HQH::Matrix, forwardmodel::Function, s::Vector, X::Vector, xis::Array{Array{Float64, 1}, 1}, R, y::Vector, delta::Float64, callback)
 	p = 1#p = 1 because X is a vector rather than a full matrix
-	paramstorun = Array(Array{Float64, 1}, length(xis) + 3)
+	paramstorun = Array{Array{Float64, 1}}(length(xis) + 3)
 	for i = 1:length(xis)
 		paramstorun[i] = s + delta * xis[i]
 	end
 	paramstorun[length(xis) + 1] = s + delta * X
 	paramstorun[length(xis) + 2] = s + delta * s
 	paramstorun[length(xis) + 3] = s
-	results = pmap(forwardmodel, paramstorun) 
+	results = pmap(forwardmodel, paramstorun)
 	callback(s, results[length(xis) + 3])
 	hs = results[length(xis) + 3]
 	fill!(HQH, 0.)

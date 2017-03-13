@@ -10,7 +10,7 @@ import Base.transpose
 type LowRankCovMatrix
 	samples::Array{Array{Float64, 1}, 1}
 	function LowRankCovMatrix(samples::Array{Array{Float64, 1}, 1})
-		zeromeansamples = Array(Array{Float64, 1}, length(samples))
+		zeromeansamples = Array{Array{Float64, 1}}(length(samples))
 		means = zeros(Float64, length(samples[1]))
 		for i = 1:length(samples)
 			for j = 1:length(means)
@@ -92,7 +92,7 @@ function At_mul_B!(v::Vector, A::Union{LowRankCovMatrix, PCGALowRankMatrix}, x::
 end
 
 function *(A::PCGALowRankMatrix, x::Vector)
-	result = Array(Float64, size(A, 1))
+	result = Array{Float64}(size(A, 1))
 	A_mul_B!(result, A, x)
 	return result
 end

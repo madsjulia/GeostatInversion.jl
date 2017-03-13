@@ -6,12 +6,12 @@ import Base.Cartesian
 "Reduce k"
 @generated function reducek(k, dimensionvaltype)
 	if dimensionvaltype == Type{Val{2}}
-		setupfinalk = :(finalk = Array(Float64, div(size(k, 2), 2), div(size(k, 1), 2)))
+		setupfinalk = :(finalk = Array{Float64}(div(size(k, 2), 2), div(size(k, 1), 2)))
 		innerloop = quote
 			finalk[j, i] = real(k[i, j])
 		end
 	elseif dimensionvaltype == Type{Val{3}}
-		setupfinalk = :(finalk = Array(Float64, div(size(k, 2), 2), div(size(k, 1), 2), div(size(k, 3), 2)))
+		setupfinalk = :(finalk = Array{Float64}(div(size(k, 2), 2), div(size(k, 1), 2), div(size(k, 3), 2)))
 		innerloop = quote
 			for h = 1:div(size(k, 3), 2)
 				finalk[j, i, h] = real(k[i, j, h])
@@ -69,7 +69,7 @@ end
 
 function mulbyphi(S)
 	phi = randn(size(S))
-	result = Array(Complex{eltype(S)}, size(S))
+	result = Array{Complex{eltype(S)}}(size(S))
 	for i = 1:length(phi)
 		result[i] = S[i] * Complex{eltype(S)}(cospi(2 * phi[i]), sinpi(2 * phi[i]))
 	end
@@ -79,7 +79,7 @@ end
 function powerlaw_structuredgrid(Ns, k0, dk, beta)
 	originalNs = Ns
 	Ns = 2 * Ns
-	fouriercoords = Array(Array{Float64, 1}, length(Ns))
+	fouriercoords = Array{Array{Float64, 1}}(length(Ns))
 	for i = 1:length(Ns)
 		fouriercoords[i] = vcat(collect(0:originalNs[i]), -1 * collect((originalNs[i] - 1):-1:1))
 	end
@@ -113,7 +113,7 @@ end
 		@Base.Cartesian.nexprs $ndims j->begin minx_j, maxx_j = extrema(points[j, :]) end
 		@Base.Cartesian.nexprs $ndims j->begin x_j = range(minx_j, (maxx_j - minx_j) / (size(structuredvals, j) - 1), size(structuredvals, j)) end
 		valinterp = Grid.CoordInterpGrid($t, structuredvals, Grid.BCnil, Grid.InterpLinear)
-		result = Array(Float64, size(points, 2))
+		result = Array{Float64}(size(points, 2))
 		for i = 1:length(result)
 			result[i] = valinterp[points[:, i]...]
 		end

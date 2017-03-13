@@ -7,7 +7,7 @@ function simplepcgalowranktest(numetas=10, numobs=20)
 	noiselevels = [1e16, 0.]#none, nuge
 	etagenerators = [zeros, randn]
 	HXgenerators = [zeros, randn]
-	etas = Array(Array{Float64, 1}, numetas)
+	etas = Array{Array{Float64, 1}}(numetas)
 	for noiselevel in noiselevels
 		for etagenerator in etagenerators
 			for HXgenerator in HXgenerators
@@ -49,9 +49,9 @@ function lowrankcovconsistencytest()
 	const M = 100
 	sqrtcovmatrix = randn(M, M)
 	covmatrix = sqrtcovmatrix * sqrtcovmatrix'
-	samples = Array(Array{Float64, 1}, N)
-	onesamples = Array(Float64, N)
-	twosamples = Array(Float64, N)
+	samples = Array{Array{Float64, 1}}(N)
+	onesamples = Array{Float64}(N)
+	twosamples = Array{Float64}(N)
 	for i = 1:N
 		samples[i] = sqrtcovmatrix * randn(M)
 		onesamples[i] = samples[i][1]
