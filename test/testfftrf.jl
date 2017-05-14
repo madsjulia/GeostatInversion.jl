@@ -1,7 +1,7 @@
 import GeostatInversion
 import Base.Test
 
-function testNd(N)
+@stderrcapture function testNd(N)
 	Ns = map(x->round(Int, 25 * x), 1 + rand(N))
 	k0 = randn()
 	dk = rand()
@@ -12,7 +12,7 @@ function testNd(N)
 	@Base.Test.test collect(size(k)) == Ns
 end
 
-function testunstructured(N)
+@stderrcapture function testunstructured(N)
 	points = randn(N, 100)
 	Ns = map(x->round(Int, 25 * x), 1 + rand(N))
 	k0 = randn()
@@ -22,11 +22,13 @@ function testunstructured(N)
 	@Base.Test.test length(k) == size(points, 2)
 end
 
-srand(0)
-for i = 1:10
-	testunstructured(2)
-	testunstructured(3)
-	testNd(2)
-	testNd(3)
+srand(2017)
+@Base.Test.testset "FTRF" begin
+	for i = 1:10
+		testunstructured(2)
+		testunstructured(3)
+		testNd(2)
+		testNd(3)
+	end
 end
 

@@ -2,7 +2,7 @@ import GeostatInversion
 import RobustPmap
 import Base.Test
 
-function simplepcgalowranktest(numetas=10, numobs=20)
+@stderrcapture function simplepcgalowranktest(numetas=10, numobs=20)
 	#[(HQH + R) HX; transpose(HX) zeros(p, p)]
 	noiselevels = [1e16, 0.]#none, nuge
 	etagenerators = [zeros, randn]
@@ -23,14 +23,14 @@ function simplepcgalowranktest(numetas=10, numobs=20)
 				for i = 1:numobs + 1
 					x = zeros(numobs + 1)
 					x[i] = 1.
-					@Base.Test.test_approx_eq bigA * x lrbigA * x
+					@Base.Test.test isapprox(bigA * x, lrbigA * x)
 				end
 			end
 		end
 	end
 end
 
-function simplelowrankcovtest()
+@stderrcapture function simplelowrankcovtest()
 	samples = Array{Float64, 1}[[-.5, 0., .5], [1., -1., 0.], [-.5, 1., -.5]]
 	lrcm = GeostatInversion.LowRankCovMatrix(samples)
 	fullcm = eye(3) * lrcm
@@ -39,12 +39,12 @@ function simplelowrankcovtest()
 	@Base.Test.test_approx_eq Base.sum(map(x->x * x', samples)) / (length(samples) - 1) fullcm
 	for i = 1:100
 		x = randn(3, 3)
-		@Base.Test.test_approx_eq fullcm * x lrcm * x
-		@Base.Test.test_approx_eq fullcm' * x lrcm' * x
+		@Base.Test.test isapprox(fullcm * x, lrcm * x)
+		@Base.Test.test isapprox(fullcm' * x, lrcm' * x)
 	end
 end
 
-function lowrankcovconsistencytest()
+@stderrcapture function lowrankcovconsistencytest()
 	const N = 10000
 	const M = 100
 	sqrtcovmatrix = randn(M, M)
@@ -62,11 +62,11 @@ function lowrankcovconsistencytest()
 	@Base.Test.test_approx_eq_eps norm(lrcmfull - covmatrix, 2) 0. M ^ 2 / sqrt(N)
 	for i = 1:100
 		x = randn(M)
-		@Base.Test.test_approx_eq lrcm * x lrcmfull * x
+		@Base.Test.test isapprox(lrcm * x, lrcmfull * x)
 	end
 end
 
-function lowrankcovgetxistest()
+@stderrcapture function lowrankcovgetxistest()
 	numfields = 100
 	numxis = 30
 	p = 20
@@ -83,11 +83,11 @@ function lowrankcovgetxistest()
 		we get from the full matrix.
 		=#
 		#This test is also tricky because the randsvd's in the two getxis calls need to be generating the same random numbers
-		@Base.Test.test_approx_eq_eps 0. min(norm(fullxis[i] - lrcmxis[i]), norm(fullxis[i] + lrcmxis[i])) 1e-6
+		@Base.Test.test isapprox(0., min(norm(fullxis[i] - lrcmxis[i]), norm(fullxis[i] + lrcmxis[i])), atol=1e-6)
 	end
 end
 
-function setupsimpletest(M, N, mu)
+@stderrcapture function setupsimpletest(M, N, mu)
 	x = randn(N)
 	Q0 = randn(M, N)
 	Q = Q0' * Q0
@@ -106,21 +106,21 @@ function setupsimpletest(M, N, mu)
 	return forward, p0, X, xis, R, yobs, truep
 end
 
-function simpletestpcga(M, N, mu=0.)
+@stderrcapture function simpletestpcga(M, N, mu=0.)
 	forward, p0, X, xis, R, yobs, truep = setupsimpletest(M, N, mu)
 	popt = GeostatInversion.pcgadirect(forward, p0, X, xis, R, yobs)
 	@Base.Test.test_approx_eq_eps norm(popt - truep) / norm(truep) 0. 2e-2
 	if M < N / 6
 		popt = GeostatInversion.pcgalsqr(forward, p0, X, xis, R, yobs)
-		@Base.Test.test_approx_eq_eps norm(popt - truep) / norm(truep) 0. 2e-2
+		@Base.Test.test isapprox(norm(popt - truep) / norm(truep), 0., atol=2e-2)
 	end
 end
 
-function simpletestrga(M, N, Nreduced, mu=0.)
+@stderrcapture function simpletestrga(M, N, Nreduced, mu=0.)
 	forward, p0, X, xis, R, yobs, truep = setupsimpletest(M, N, mu)
 	S = randn(Nreduced, N) * (1 / sqrt(N))
 	popt = GeostatInversion.rga(forward, p0, X, xis, R, yobs, S)
-	@Base.Test.test_approx_eq_eps norm(popt - truep) / norm(truep) 0. 2e-2
+	@Base.Test.test isapprox(norm(popt - truep) / norm(truep), 0., atol=2e-2)
 end
 
 #=
@@ -131,24 +131,27 @@ function simpletestpcgalm(M, N, mu=0.)
 end
 =#
 
-@everywhere srand(0)
-simplepcgalowranktest()
-simplelowrankcovtest()
-lowrankcovconsistencytest()
-lowrankcovgetxistest()
-simpletestrga(2 ^ 3, 2 ^ 10, 2 ^ 9)
-simpletestrga(2 ^ 3, 2 ^ 11, 2 ^ 9)
-simpletestrga(2 ^ 3, 2 ^ 10, 2 ^ 9, 10.)
-simpletestrga(2 ^ 3, 2 ^ 11, 2 ^ 9, 10.)
-maxlog2N = 8
-minlog2N = 2
-for log2N = minlog2N:maxlog2N
-	for log2M = 0:log2N - 1
-		N = 2 ^ log2N
-		M = 2 ^ log2M
-		simpletestpcga(M, N)
-		simpletestpcga(M, N, 10.)
-		#simpletestpcgalm(M, N)
-		#simpletestpcgalm(M, N, 10.)
+@Base.Test.testset "RPSGA" begin
+	@everywhere srand(2017)
+	simplepcgalowranktest()
+	simplelowrankcovtest()
+	lowrankcovconsistencytest()
+	lowrankcovgetxistest()
+	simpletestrga(2 ^ 3, 2 ^ 10, 2 ^ 9)
+	simpletestrga(2 ^ 3, 2 ^ 11, 2 ^ 9)
+	simpletestrga(2 ^ 3, 2 ^ 10, 2 ^ 9, 10.)
+	simpletestrga(2 ^ 3, 2 ^ 11, 2 ^ 9, 10.)
+	maxlog2N = 8
+	minlog2N = 2
+	for log2N = minlog2N:maxlog2N
+		for log2M = 0:log2N - 1
+			N = 2 ^ log2N
+			M = 2 ^ log2M
+			simpletestpcga(M, N)
+			simpletestpcga(M, N, 10.)
+			#simpletestpcgalm(M, N)
+			#simpletestpcgalm(M, N, 10.)
+		end
 	end
 end
+:passed
