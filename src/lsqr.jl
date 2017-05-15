@@ -51,10 +51,9 @@ function pcgalsqriteration(forwardmodel::Function, s::Vector, X::Vector, xis::Ar
 	Hs = (results[length(xis)+2] - hs) / delta
 	b = [y - hs + Hs; zeros(p)];
 	bigA = PCGALowRankMatrix(etas, HX, R)
-	x = IterativeSolvers.lsqr(bigA, b)[1]
+	x = IterativeSolvers.lsqr(bigA, b)
 	beta_bar = x[end]
 	xi_bar = x[1:end-1]
-	@show x[1:end-1]
 	s = X * beta_bar
 	for i = 1:length(xis)#add HQ' * xi_bar to s
 		etai = (results[i] - hs) / delta
