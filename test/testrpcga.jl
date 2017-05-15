@@ -106,7 +106,7 @@ end
 	return forward, p0, X, xis, R, yobs, truep
 end
 
-@stderrcapture function simpletestpcga(M::Int, N::Int; mu=0.)
+@stderrcapture function simpletestpcga(M::Int, N::Int, mu::Float64=0.)
 	forward, p0, X, xis, R, yobs, truep = setupsimpletest(M, N, mu)
 	popt = GeostatInversion.pcgadirect(forward, p0, X, xis, R, yobs)
 	@Base.Test.test isapprox(norm(popt - truep) / norm(truep), 0., atol=2e-1)
@@ -116,7 +116,7 @@ end
 	end
 end
 
-@stderrcapture function simpletestrga(M::Int, N::Int, Nreduced::Int; mu=0.)
+@stderrcapture function simpletestrga(M::Int, N::Int, Nreduced::Int, mu::Float64=0.)
 	forward, p0, X, xis, R, yobs, truep = setupsimpletest(M, N, mu)
 	S = randn(Nreduced, N) * (1 / sqrt(N))
 	popt = GeostatInversion.rga(forward, p0, X, xis, R, yobs, S)
@@ -148,7 +148,7 @@ end
 			N = 2 ^ log2N
 			M = 2 ^ log2M
 			simpletestpcga(M, N)
-			simpletestpcga(M, N, 10)
+			simpletestpcga(M, N, 10.)
 			#simpletestpcgalm(M, N)
 			#simpletestpcgalm(M, N, 10.)
 		end
