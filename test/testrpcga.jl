@@ -112,7 +112,8 @@ end
 	@Base.Test.test isapprox(norm(popt - truep) / norm(truep), 0., atol=2e-1)
 	if M < N / 6
 		popt = GeostatInversion.pcgalsqr(forward, p0, X, xis, R, yobs)
-		@Base.Test.test isapprox(norm(popt - truep) / norm(truep), 0., atol=2e-1)
+		@show norm(popt - truep) / norm(truep)
+		@Base.Test.test isapprox(norm(popt - truep) / norm(truep), 0., atol=0.5)
 	end
 end
 
