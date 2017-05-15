@@ -54,6 +54,7 @@ function pcgalsqriteration(forwardmodel::Function, s::Vector, X::Vector, xis::Ar
 	x = IterativeSolvers.lsqr(bigA, b)[1]
 	beta_bar = x[end]
 	xi_bar = x[1:end-1]
+	@show x[1:end-1]
 	s = X * beta_bar
 	for i = 1:length(xis)#add HQ' * xi_bar to s
 		etai = (results[i] - hs) / delta

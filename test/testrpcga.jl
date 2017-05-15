@@ -109,11 +109,10 @@ end
 @stderrcapture function simpletestpcga(M::Int, N::Int, mu::Float64=0.)
 	forward, p0, X, xis, R, yobs, truep = setupsimpletest(M, N, mu)
 	popt = GeostatInversion.pcgadirect(forward, p0, X, xis, R, yobs)
-	@Base.Test.test isapprox(norm(popt - truep) / norm(truep), 0., atol=2e-1)
+	@Base.Test.test isapprox(norm(popt - truep) / norm(truep), 0., atol=2e-2)
 	if M < N / 6
 		popt = GeostatInversion.pcgalsqr(forward, p0, X, xis, R, yobs)
-		@show norm(popt - truep) / norm(truep)
-		@Base.Test.test isapprox(norm(popt - truep) / norm(truep), 0., atol=0.5)
+		@Base.Test.test isapprox(norm(popt - truep) / norm(truep), 0., atol=2e-2)
 	end
 end
 
