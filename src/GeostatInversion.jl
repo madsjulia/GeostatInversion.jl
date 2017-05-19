@@ -3,6 +3,20 @@ module GeostatInversion
 import IterativeSolvers
 import RobustPmap
 
+"Try to import a module"
+macro tryimport(s::Symbol)
+	importq = string(:(import $s))
+	warnstring = string("Module ", s, " is not available")
+	q = quote
+		try
+			eval(parse($importq))
+		catch
+			warn($warnstring)
+		end
+	end
+	return :($(esc(q)))
+end
+
 include("FFTRF.jl")
 include("RandMatFact.jl")
 include("FDDerivatives.jl")
