@@ -1,6 +1,6 @@
 module FFTRF
 
-import Grid
+@tryimport Grid
 import Base.Cartesian
 
 "Reduce k"
