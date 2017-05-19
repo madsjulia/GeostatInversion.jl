@@ -1,5 +1,19 @@
 module FFTRF
 
+"Try to import a module"
+macro tryimport(s::Symbol)
+	importq = string(:(import $s))
+	warnstring = string("Module ", s, " is not available")
+	q = quote
+		try
+			eval(parse($importq))
+		catch
+			warn($warnstring)
+		end
+	end
+	return :($(esc(q)))
+end
+
 @tryimport Grid
 import Base.Cartesian
 
