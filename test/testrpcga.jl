@@ -34,9 +34,9 @@ end
 	samples = Array{Float64, 1}[[-.5, 0., .5], [1., -1., 0.], [-.5, 1., -.5]]
 	lrcm = GeostatInversion.LowRankCovMatrix(samples)
 	fullcm = eye(3) * lrcm
-	@Base.Test.test_approx_eq fullcm lrcm * eye(3)
-	@Base.Test.test_approx_eq Base.sum(map(x->x * x', samples)) / (length(samples) - 1) fullcm
-	@Base.Test.test_approx_eq Base.sum(map(x->x * x', samples)) / (length(samples) - 1) fullcm
+	@Base.Test.test isapprox(fullcm, lrcm * eye(3))
+	@Base.Test.test isapprox(Base.sum(map(x->x * x', samples)) / (length(samples) - 1), fullcm)
+	@Base.Test.test isapprox(Base.sum(map(x->x * x', samples)) / (length(samples) - 1), fullcm)
 	for i = 1:100
 		x = randn(3, 3)
 		@Base.Test.test isapprox(fullcm * x, lrcm * x)
@@ -59,7 +59,7 @@ end
 	end
 	lrcm = GeostatInversion.LowRankCovMatrix(samples)
 	lrcmfull = lrcm * eye(M)
-	@Base.Test.test_approx_eq_eps norm(lrcmfull - covmatrix, 2) 0. M ^ 2 / sqrt(N)
+	@Base.Test.test isapprox(norm(lrcmfull - covmatrix, 2), 0.; atol=M ^ 2 / sqrt(N))
 	for i = 1:100
 		x = randn(M)
 		@Base.Test.test isapprox(lrcm * x, lrcmfull * x)
