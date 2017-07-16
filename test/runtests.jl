@@ -15,9 +15,9 @@ if !isdefined(Symbol("@stderrcapture"))
     end
 end
 
+include("testfftrf.jl")
 include("testrpcga.jl")
 include("testrmf.jl")
-include("testfftrf.jl")
 include("testfd.jl")
 
 :passed

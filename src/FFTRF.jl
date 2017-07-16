@@ -14,7 +14,7 @@ macro tryimport(s::Symbol)
 	return :($(esc(q)))
 end
 
-@tryimport Grid
+import Interpolations
 import Base.Cartesian
 
 "Reduce k"
@@ -81,7 +81,7 @@ end
 	return q
 end
 
-function mulbyphi(S)
+function mulbyphi(S::Array)
 	phi = randn(size(S))
 	result = Array{Complex{eltype(S)}}(size(S))
 	for i = 1:length(phi)
@@ -90,7 +90,7 @@ function mulbyphi(S)
 	return result
 end
 
-function powerlaw_structuredgrid(Ns, k0, dk, beta)
+function powerlaw_structuredgrid(Ns::Vector, k0::Number, dk::Number, beta::Number)
 	originalNs = Ns
 	Ns = 2 * Ns
 	fouriercoords = Array{Array{Float64, 1}}(length(Ns))
@@ -100,7 +100,7 @@ function powerlaw_structuredgrid(Ns, k0, dk, beta)
 	sqrtS_f = computesqrtS_f(fouriercoords, Ns, beta, Val{length(Ns)})
 	result = mulbyphi(sqrtS_f)
 	kcomplex = ifft(result)
-	finalk = reducek(kcomplex, Val{length(Ns)})#the result is periodic and 2x (in each dimension) as big as it needs to be -- make it smaller and non-periodic
+	finalk = reducek(kcomplex, Val{length(Ns)}) # the result is periodic and 2x (in each dimension) as big as it needs to be -- make it smaller and non-periodic
 	stdfinalk = std(finalk)
 	meanfinalk = mean(finalk)
 	for i = 1:length(finalk)
@@ -109,7 +109,7 @@ function powerlaw_structuredgrid(Ns, k0, dk, beta)
 	return finalk
 end
 
-function powerlaw_unstructuredgrid(points, Ns, k0, dk, beta)
+function powerlaw_unstructuredgrid(points::Matrix, Ns::Vector, k0::Number, dk::Number, beta::Number)
 	structuredvals = powerlaw_structuredgrid(Ns, k0, dk, beta)
 	return interpolate(points, structuredvals, Val{length(Ns)})
 end
@@ -126,7 +126,8 @@ end
 	q = quote
 		@Base.Cartesian.nexprs $ndims j->begin minx_j, maxx_j = extrema(points[j, :]) end
 		@Base.Cartesian.nexprs $ndims j->begin x_j = range(minx_j, (maxx_j - minx_j) / (size(structuredvals, j) - 1), size(structuredvals, j)) end
-		valinterp = Grid.CoordInterpGrid($t, structuredvals, Grid.BCnil, Grid.InterpLinear)
+		# valinterp = Grid.CoordInterpGrid($t, structuredvals, Grid.BCnil, Grid.InterpLinear)
+		valinterp = Interpolations.scale(Interpolations.interpolate(structuredvals, Interpolations.BSpline(Interpolations.Linear()), Interpolations.OnGrid()), $t...)
 		result = Array{Float64}(size(points, 2))
 		for i = 1:length(result)
 			result[i] = valinterp[points[:, i]...]
