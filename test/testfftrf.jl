@@ -7,8 +7,8 @@ import Base.Test
 	dk = rand()
 	beta = -2 - rand()
 	k = GeostatInversion.FFTRF.powerlaw_structuredgrid(Ns, k0, dk, beta)
-	@Base.Test.test_approx_eq mean(k) k0
-	@Base.Test.test_approx_eq std(k) dk
+	@Base.Test.test mean(k) ≈ k0
+	@Base.Test.test std(k) ≈ dk
 	@Base.Test.test collect(size(k)) == Ns
 end
 
