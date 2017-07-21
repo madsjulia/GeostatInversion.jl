@@ -77,7 +77,7 @@ function randsvd(A, K::Int, p::Int, q::Int)
 	Q = rangefinder(A, K + p, q);
 	B = Q' * A;
 	(), S, V = svd(B);#This is algorithm 5.1 from Halko et al, Direct SVD
-	Sh = diagm(sqrt([S[1:K]; zeros(p)]))#Cut back to K from K+p
+	Sh = diagm(sqrt.([S[1:K]; zeros(p)]))#Cut back to K from K+p
 	Z = V * Sh
 	return Z
 end

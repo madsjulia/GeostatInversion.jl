@@ -4,25 +4,27 @@ import Interpolations
 import Base.Cartesian
 
 "Reduce k"
-@generated function reducek(k, dimensionvaltype)
-	if dimensionvaltype == Type{Val{2}}
+@generated function reducek{N}(k, dimensionvaltype::Type{Val{N}})
+	if N == 2
 		setupfinalk = :(finalk = Array{Float64}(div(size(k, 2), 2), div(size(k, 1), 2)))
 		innerloop = quote
 			finalk[j, i] = real(k[i, j])
 		end
-	elseif dimensionvaltype == Type{Val{3}}
+	elseif N == 3
 		setupfinalk = :(finalk = Array{Float64}(div(size(k, 2), 2), div(size(k, 1), 2), div(size(k, 3), 2)))
 		innerloop = quote
 			for h = 1:div(size(k, 3), 2)
 				finalk[j, i, h] = real(k[i, j, h])
 			end
 		end
-	else
-		error("unsupported dimension: $dimensionvaltype")
 	end
 	q = quote
 		$setupfinalk
-		Ns = map(i->div(i, 2), size(k))
+		Ns = Array{Int}(ndims(k))
+		sk = size(k)
+		for i = 1:ndims(k)
+			Ns[i] = div(sk[i], 2)
+		end
 		for i = 1:div(size(k, 1), 2)
 			for j = 1:div(size(k, 2), 2)
 				$innerloop
