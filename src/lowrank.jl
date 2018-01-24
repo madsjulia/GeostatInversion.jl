@@ -51,6 +51,11 @@ function size(A::LowRankCovMatrix, i::Int)
 	end
 end
 
+function size(A::PCGALowRankMatrix)
+	s = length(A.etas[1]) + 1
+	return (s, s)
+end
+
 function size(A::PCGALowRankMatrix, i::Int)
 	if i == 1 || i == 2
 		return length(A.etas[1]) + 1#the +1 is for HX
