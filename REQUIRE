@@ -1,4 +1,4 @@
 julia 0.5
 RobustPmap
-IterativeSolvers 0.3.0
+IterativeSolvers 0.5.0
 Interpolations
