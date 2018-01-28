@@ -2,6 +2,14 @@ import GeostatInversion
 import RobustPmap
 import Base.Test
 
+@stderrcapture function pcgalowranksize(numetas=10, numobs=20)
+	etas = [rand(numobs) for i = 1 : numetas]
+	HX = rand(10)
+	R = spzeros(10, 10)
+	A = GeostatInversion.PCGALowRankMatrix(etas, HX, R)
+	@Base.Test.test size(A) == (size(A, 1), size(A, 2))
+end
+
 @stderrcapture function simplepcgalowranktest(numetas=10, numobs=20)
 	#[(HQH + R) HX; transpose(HX) zeros(p, p)]
 	noiselevels = [1e16, 0.]#none, nuge
@@ -133,6 +141,7 @@ end
 
 @Base.Test.testset "RPSGA" begin
 	@everywhere srand(2017)
+	pcgalowranksize()
 	simplepcgalowranktest()
 	simplelowrankcovtest()
 	lowrankcovconsistencytest()
