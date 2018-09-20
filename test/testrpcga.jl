@@ -43,13 +43,8 @@ end
 @stderrcapture function simplelowrankcovtest()
 	samples = Array{Float64, 1}[[-.5, 0., .5], [1., -1., 0.], [-.5, 1., -.5]]
 	lrcm = GeostatInversion.LowRankCovMatrix(samples)
-<<<<<<< HEAD
 	fullcm = LinearAlgebra.eye(3) * lrcm
 	@Test.test isapprox(fullcm, lrcm * LinearAlgebra.eye(3))
-=======
-	fullcm = eye(3) * lrcm
-	@Test.test isapprox(fullcm, lrcm * eye(3))
->>>>>>> 07319b23a4ad5f1ce2fd1696ee85e4d36de68375
 	@Test.test isapprox(sum(map(x->x * x', samples)) / (length(samples) - 1), fullcm)
 	@Test.test isapprox(sum(map(x->x * x', samples)) / (length(samples) - 1), fullcm)
 	for i = 1:100
@@ -73,11 +68,7 @@ end
 		twosamples[i] = samples[i][2]
 	end
 	lrcm = GeostatInversion.LowRankCovMatrix(samples)
-<<<<<<< HEAD
 	lrcmfull = lrcm * LinearAlgebra.eye(M)
-=======
-	lrcmfull = lrcm * eye(M)
->>>>>>> 07319b23a4ad5f1ce2fd1696ee85e4d36de68375
 	@Test.test isapprox(norm(lrcmfull - covmatrix, 2), 0.; atol=M ^ 2 / sqrt(N))
 	for i = 1:100
 		x = randn(M)
@@ -151,11 +142,7 @@ end
 =#
 
 @Test.testset "RPSGA" begin
-<<<<<<< HEAD
 	@everywhere Random.seed!(2017)
-=======
-	@everywhere srand(2017)
->>>>>>> 07319b23a4ad5f1ce2fd1696ee85e4d36de68375
 	pcgalowranksize()
 	simplepcgalowranktest()
 	simplelowrankcovtest()
