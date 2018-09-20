@@ -1,10 +1,10 @@
-if !isdefined(Symbol("@stderrcapture"))
+if !isdefined(Base, Symbol("@stderrcapture"))
     macro stderrcapture(block)
         quote
             if ccall(:jl_generating_output, Cint, ()) == 0
-                errororiginal = STDERR;
+                errororiginal = stderr;
                 (errR, errW) = redirect_stderr();
-                errorreader = @async readstring(errR);
+                errorreader = @async read(errR, String);
                 evalvalue = $(esc(block))
                 redirect_stderr(errororiginal);
                 close(errW);

@@ -1,7 +1,8 @@
 module FFTRF
 
 import Interpolations
-import Base.Cartesian
+import FFTW
+import Cartesian
 
 "Reduce k"
 @generated function reducek{N}(k, dimensionvaltype::Type{Val{N}})
@@ -87,7 +88,7 @@ function powerlaw_structuredgrid(Ns::Vector, k0::Number, dk::Number, beta::Numbe
 	end
 	sqrtS_f = computesqrtS_f(fouriercoords, Ns, beta, Val{length(Ns)})
 	result = mulbyphi(sqrtS_f)
-	kcomplex = ifft(result)
+	kcomplex = FFTW.ifft(result)
 	finalk = reducek(kcomplex, Val{length(Ns)}) # the result is periodic and 2x (in each dimension) as big as it needs to be -- make it smaller and non-periodic
 	stdfinalk = std(finalk)
 	meanfinalk = mean(finalk)
