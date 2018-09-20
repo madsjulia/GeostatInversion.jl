@@ -1,13 +1,14 @@
 import Base.*
 import Base.eltype
 import Base.size
-import Base.Ac_mul_B!
-import Base.At_mul_B!
-import Base.A_mul_B!
+import LinearAlgebra.Ac_mul_B!
+import LinearAlgebra.At_mul_B!
+import LinearAlgebra.A_mul_B!
 import Base.\
 import Base.transpose
+import LinearAlgebra
 
-type LowRankCovMatrix
+mutable struct LowRankCovMatrix
 	samples::Array{Array{Float64, 1}, 1}
 	function LowRankCovMatrix(samples::Array{Array{Float64, 1}, 1})
 		zeromeansamples = Array{Array{Float64, 1}}(length(samples))
@@ -25,7 +26,7 @@ type LowRankCovMatrix
 	end
 end
 
-type PCGALowRankMatrix
+mutable struct PCGALowRankMatrix
 	etas::Array{Array{Float64, 1}, 1}
 	HX::Array{Float64, 1}
 	R

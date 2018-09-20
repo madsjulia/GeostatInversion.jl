@@ -1,6 +1,8 @@
 "Random Matrix Factorization Functions"
 module RandMatFact
 
+using LinearAlgebra
+
 function colnorms(Y)
 	norms = Array{Float64}(size(Y, 2))
 	for i = 1:size(Y, 2)

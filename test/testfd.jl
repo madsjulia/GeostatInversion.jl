@@ -1,5 +1,5 @@
 import GeostatInversion
-import Base.Test
+import Test
 
 @stderrcapture function basictest()
 	function f(x::Array{Float64, 1})
@@ -10,14 +10,14 @@ import Base.Test
 	end
 	testjacobianf = GeostatInversion.FDDerivatives.makejacobian(f)
 	x = [1., 2.]
-	@Base.Test.test isapprox(jacobianf(x), testjacobianf(x), atol=1e-4)
+	@Test.test isapprox(jacobianf(x), testjacobianf(x), atol=1e-4)
 	for i = 1:10000
 		x = 10 * randn(2)
-		@Base.Test.test isapprox(jacobianf(x), testjacobianf(x), atol=1e-4)
+		@Test.test isapprox(jacobianf(x), testjacobianf(x), atol=1e-4)
 	end
 end
 
-srand(2017)
-@Base.Test.testset "Basic" begin
+Random.seed!(2017)
+@Test.testset "Basic" begin
 	basictest()
 end

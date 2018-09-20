@@ -1,13 +1,15 @@
 import GeostatInversion
 import RobustPmap
-import Base.Test
+import Test
+import SparseArrays
+import LinearAlgebra
 
 @stderrcapture function pcgalowranksize(numetas=10, numobs=20)
 	etas = [rand(numobs) for i = 1 : numetas]
 	HX = rand(10)
 	R = spzeros(10, 10)
 	A = GeostatInversion.PCGALowRankMatrix(etas, HX, R)
-	@Base.Test.test size(A) == (size(A, 1), size(A, 2))
+	@Test.test size(A) == (size(A, 1), size(A, 2))
 end
 
 @stderrcapture function simplepcgalowranktest(numetas=10, numobs=20)
@@ -25,13 +27,13 @@ end
 					BLAS.ger!(1., etas[i], etas[i], HQH)
 				end
 				HX = HXgenerator(numobs)
-				R = noiselevel * speye(numobs)
+				R = noiselevel * SparseArrays.speye(numobs)
 				bigA = [(HQH + R) HX; transpose(HX) zeros(1, 1)]
 				lrbigA = GeostatInversion.PCGALowRankMatrix(etas, HX, R)
 				for i = 1:numobs + 1
 					x = zeros(numobs + 1)
 					x[i] = 1.
-					@Base.Test.test isapprox(bigA * x, lrbigA * x)
+					@Test.test isapprox(bigA * x, lrbigA * x)
 				end
 			end
 		end
@@ -41,14 +43,14 @@ end
 @stderrcapture function simplelowrankcovtest()
 	samples = Array{Float64, 1}[[-.5, 0., .5], [1., -1., 0.], [-.5, 1., -.5]]
 	lrcm = GeostatInversion.LowRankCovMatrix(samples)
-	fullcm = eye(3) * lrcm
-	@Base.Test.test isapprox(fullcm, lrcm * eye(3))
-	@Base.Test.test isapprox(Base.sum(map(x->x * x', samples)) / (length(samples) - 1), fullcm)
-	@Base.Test.test isapprox(Base.sum(map(x->x * x', samples)) / (length(samples) - 1), fullcm)
+	fullcm = LinearAlgebra.eye(3) * lrcm
+	@Test.test isapprox(fullcm, lrcm * LinearAlgebra.eye(3))
+	@Test.test isapprox(sum(map(x->x * x', samples)) / (length(samples) - 1), fullcm)
+	@Test.test isapprox(sum(map(x->x * x', samples)) / (length(samples) - 1), fullcm)
 	for i = 1:100
 		x = randn(3, 3)
-		@Base.Test.test isapprox(fullcm * x, lrcm * x)
-		@Base.Test.test isapprox(fullcm' * x, lrcm' * x)
+		@Test.test isapprox(fullcm * x, lrcm * x)
+		@Test.test isapprox(fullcm' * x, lrcm' * x)
 	end
 end
 
@@ -66,11 +68,11 @@ end
 		twosamples[i] = samples[i][2]
 	end
 	lrcm = GeostatInversion.LowRankCovMatrix(samples)
-	lrcmfull = lrcm * eye(M)
-	@Base.Test.test isapprox(norm(lrcmfull - covmatrix, 2), 0.; atol=M ^ 2 / sqrt(N))
+	lrcmfull = lrcm * LinearAlgebra.eye(M)
+	@Test.test isapprox(norm(lrcmfull - covmatrix, 2), 0.; atol=M ^ 2 / sqrt(N))
 	for i = 1:100
 		x = randn(M)
-		@Base.Test.test isapprox(lrcm * x, lrcmfull * x)
+		@Test.test isapprox(lrcm * x, lrcmfull * x)
 	end
 end
 
@@ -81,7 +83,7 @@ end
 	samplefield() = GeostatInversion.FFTRF.powerlaw_structuredgrid([25, 25], 2., 3.14, -3.5)[1:end]
 	lrcmxis, fields = GeostatInversion.getxis(Val{:iwantfields}, samplefield, numfields, numxis, p, 3, 0)
 	lrcm = GeostatInversion.LowRankCovMatrix(fields)
-	fullcm = eye(size(lrcm, 1)) * lrcm
+	fullcm = LinearAlgebra.eye(size(lrcm, 1)) * lrcm
 	fullxis = GeostatInversion.getxis(fullcm, numxis, p, 3, 0)
 	for i = 1:length(fullxis)
 		#=
@@ -91,7 +93,7 @@ end
 		we get from the full matrix.
 		=#
 		#This test is also tricky because the randsvd's in the two getxis calls need to be generating the same random numbers
-		@Base.Test.test isapprox(0., min(norm(fullxis[i] - lrcmxis[i]), norm(fullxis[i] + lrcmxis[i])), atol=1e-6)
+		@Test.test isapprox(0., min(norm(fullxis[i] - lrcmxis[i]), norm(fullxis[i] + lrcmxis[i])), atol=1e-6)
 	end
 end
 
@@ -108,7 +110,7 @@ end
 	xis = GeostatInversion.getxis(Q, M, round(Int, 0.1 * M))
 	X = fill(mu, N)
 	noiselevel = 0.0001
-	R = noiselevel ^ 2 * speye(N)
+	R = noiselevel ^ 2 * SparseArrays.speye(N)
 	yobs = truey + noiselevel * randn(N)
 	p0 = fill(mu, N)
 	return forward, p0, X, xis, R, yobs, truep
@@ -117,10 +119,10 @@ end
 @stderrcapture function simpletestpcga(M::Int, N::Int, mu::Float64=0.)
 	forward, p0, X, xis, R, yobs, truep = setupsimpletest(M, N, mu)
 	popt = GeostatInversion.pcgadirect(forward, p0, X, xis, R, yobs)
-	@Base.Test.test isapprox(norm(popt - truep) / norm(truep), 0., atol=2e-2)
+	@Test.test isapprox(norm(popt - truep) / norm(truep), 0., atol=2e-2)
 	if M < N / 6
 		popt = GeostatInversion.pcgalsqr(forward, p0, X, xis, R, yobs)
-		@Base.Test.test isapprox(norm(popt - truep) / norm(truep), 0., atol=2e-2)
+		@Test.test isapprox(norm(popt - truep) / norm(truep), 0., atol=2e-2)
 	end
 end
 
@@ -128,19 +130,19 @@ end
 	forward, p0, X, xis, R, yobs, truep = setupsimpletest(M, N, mu)
 	S = randn(Nreduced, N) * (1 / sqrt(N))
 	popt = GeostatInversion.rga(forward, p0, X, xis, R, yobs, S)
-	@Base.Test.test isapprox(norm(popt - truep) / norm(truep), 0., atol=2e-2)
+	@Test.test isapprox(norm(popt - truep) / norm(truep), 0., atol=2e-2)
 end
 
 #=
 function simpletestpcgalm(M, N, mu=0.)
 	forward, p0, X, xis, R, yobs, truep = setupsimpletest(M, N, mu)
 	popt = GeostatInversion.pcgalm(forward, p0, X, xis, diag(R), yobs)
-	@Base.Test.test_approx_eq_eps norm(popt - truep) / norm(truep) 0. 2e-2
+	@Test.test_approx_eq_eps norm(popt - truep) / norm(truep) 0. 2e-2
 end
 =#
 
-@Base.Test.testset "RPSGA" begin
-	@everywhere srand(2017)
+@Test.testset "RPSGA" begin
+	@everywhere Random.seed!(2017)
 	pcgalowranksize()
 	simplepcgalowranktest()
 	simplelowrankcovtest()

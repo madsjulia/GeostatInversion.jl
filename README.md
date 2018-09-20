@@ -2,6 +2,8 @@ GeostatInversion
 ================
 
 [![GeostatInversion](http://pkg.julialang.org/badges/GeostatInversion_0.5.svg)](http://pkg.julialang.org/?pkg=GeostatInversion&ver=0.5)
+[![GeostatInversion](http://pkg.julialang.org/badges/GeostatInversion_0.6.svg)](http://pkg.julialang.org/?pkg=GeostatInversion&ver=0.6)
+[![GeostatInversion](http://pkg.julialang.org/badges/GeostatInversion_0.7.svg)](http://pkg.julialang.org/?pkg=GeostatInversion&ver=0.7)
 [![Build Status](https://travis-ci.org/madsjulia/GeostatInversion.jl.svg?branch=master)](https://travis-ci.org/madsjulia/GeostatInversion.jl)
 [![Coverage Status](https://coveralls.io/repos/madsjulia/GeostatInversion.jl/badge.svg?branch=master)](https://coveralls.io/r/madsjulia/GeostatInversion.jl?branch=master)
 

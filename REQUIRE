@@ -2,3 +2,4 @@ julia 0.6
 RobustPmap
 IterativeSolvers 0.5.0
 Interpolations
+FFTW

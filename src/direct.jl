@@ -49,7 +49,7 @@ function pcgadirectiteration!(HQH::Matrix, forwardmodel::Function, s::Vector, X:
 	fill!(HQH, 0.)
 	for i = 1:length(xis)
 		etai = (results[i] - hs) / delta
-		BLAS.ger!(1., etai, etai, HQH)
+		LinearAlgebra.BLAS.ger!(1., etai, etai, HQH)
 	end
 	HX = (results[length(xis)+1] - hs) / delta
 	Hs = (results[length(xis)+2] - hs) / delta

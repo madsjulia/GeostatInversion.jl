@@ -2,16 +2,18 @@ module FFTRF
 
 import Interpolations
 import Base.Cartesian
+import FFTW
+import Statistics
 
 "Reduce k"
-@generated function reducek{N}(k, dimensionvaltype::Type{Val{N}})
+@generated function reducek(k, dimensionvaltype::Type{Val{N}}) where N
 	if N == 2
-		setupfinalk = :(finalk = Array{Float64}(div(size(k, 2), 2), div(size(k, 1), 2)))
+		setupfinalk = :(finalk = Array{Float64}(undef, div(size(k, 2), 2), div(size(k, 1), 2)))
 		innerloop = quote
 			finalk[j, i] = real(k[i, j])
 		end
 	elseif N == 3
-		setupfinalk = :(finalk = Array{Float64}(div(size(k, 2), 2), div(size(k, 1), 2), div(size(k, 3), 2)))
+		setupfinalk = :(finalk = Array{Float64}(undef, div(size(k, 2), 2), div(size(k, 1), 2), div(size(k, 3), 2)))
 		innerloop = quote
 			for h = 1:div(size(k, 3), 2)
 				finalk[j, i, h] = real(k[i, j, h])
@@ -20,7 +22,7 @@ import Base.Cartesian
 	end
 	q = quote
 		$setupfinalk
-		Ns = Array{Int}(ndims(k))
+		Ns = Array{Int}(undef, ndims(k))
 		sk = size(k)
 		for i = 1:ndims(k)
 			Ns[i] = div(sk[i], 2)
@@ -71,7 +73,7 @@ end
 
 function mulbyphi(S::Array)
 	phi = randn(size(S))
-	result = Array{Complex{eltype(S)}}(size(S))
+	result = Array{Complex{eltype(S)}}(undef, size(S))
 	for i = 1:length(phi)
 		result[i] = S[i] * Complex{eltype(S)}(cospi(2 * phi[i]), sinpi(2 * phi[i]))
 	end
@@ -81,16 +83,16 @@ end
 function powerlaw_structuredgrid(Ns::Vector, k0::Number, dk::Number, beta::Number)
 	originalNs = Ns
 	Ns = 2 * Ns
-	fouriercoords = Array{Array{Float64, 1}}(length(Ns))
+	fouriercoords = Array{Array{Float64, 1}}(undef, length(Ns))
 	for i = 1:length(Ns)
 		fouriercoords[i] = vcat(collect(0:originalNs[i]), -1 * collect((originalNs[i] - 1):-1:1))
 	end
 	sqrtS_f = computesqrtS_f(fouriercoords, Ns, beta, Val{length(Ns)})
 	result = mulbyphi(sqrtS_f)
-	kcomplex = ifft(result)
+	kcomplex = FFTW.ifft(result)
 	finalk = reducek(kcomplex, Val{length(Ns)}) # the result is periodic and 2x (in each dimension) as big as it needs to be -- make it smaller and non-periodic
-	stdfinalk = std(finalk)
-	meanfinalk = mean(finalk)
+	stdfinalk = Statistics.std(finalk)
+	meanfinalk = Statistics.mean(finalk)
 	for i = 1:length(finalk)
 		finalk[i] = dk * (finalk[i] - meanfinalk) / stdfinalk + k0
 	end
@@ -113,10 +115,10 @@ end
 	t = :(@Base.Cartesian.ntuple $ndims x)
 	q = quote
 		@Base.Cartesian.nexprs $ndims j->begin minx_j, maxx_j = extrema(points[j, :]) end
-		@Base.Cartesian.nexprs $ndims j->begin x_j = range(minx_j, (maxx_j - minx_j) / (size(structuredvals, j) - 1), size(structuredvals, j)) end
+		@Base.Cartesian.nexprs $ndims j->begin x_j = range(minx_j; step=(maxx_j - minx_j) / (size(structuredvals, j) - 1), length=size(structuredvals, j)) end
 		# valinterp = Grid.CoordInterpGrid($t, structuredvals, Grid.BCnil, Grid.InterpLinear)
 		valinterp = Interpolations.scale(Interpolations.interpolate(structuredvals, Interpolations.BSpline(Interpolations.Linear()), Interpolations.OnGrid()), $t...)
-		result = Array{Float64}(size(points, 2))
+		result = Array{Float64}(undef, size(points, 2))
 		for i = 1:length(result)
 			result[i] = valinterp[points[:, i]...]
 		end

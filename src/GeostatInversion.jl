@@ -4,6 +4,7 @@ module GeostatInversion
 
 import IterativeSolvers
 import RobustPmap
+using LinearAlgebra
 
 include("FFTRF.jl")
 include("RandMatFact.jl")
@@ -14,12 +15,12 @@ include("lowrank.jl")
 include("lsqr.jl")
 #include("lm.jl")
 
-function randsvdwithseed(Q, numxis, p, q, seed::Void)
+function randsvdwithseed(Q, numxis, p, q, seed::Nothing)
 	return RandMatFact.randsvd(Q, numxis, p, q)
 end
 
 function randsvdwithseed(Q, numxis, p, q, seed::Int)
-	srand(seed)
+	Random.seed!
 	return RandMatFact.randsvd(Q, numxis, p, q)
 end
 
