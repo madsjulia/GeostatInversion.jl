@@ -11,7 +11,7 @@ import LinearAlgebra
 mutable struct LowRankCovMatrix
 	samples::Array{Array{Float64, 1}, 1}
 	function LowRankCovMatrix(samples::Array{Array{Float64, 1}, 1})
-		zeromeansamples = Array{Array{Float64, 1}}(length(samples))
+		zeromeansamples = Array{Array{Float64, 1}}(undef, length(samples))
 		means = zeros(Float64, length(samples[1]))
 		for i = 1:length(samples)
 			for j = 1:length(means)
@@ -98,7 +98,7 @@ function At_mul_B!(v::Vector, A::Union{LowRankCovMatrix, PCGALowRankMatrix}, x::
 end
 
 function *(A::PCGALowRankMatrix, x::Vector)
-	result = Array{Float64}(size(A, 1))
+	result = Array{Float64}(undef, size(A, 1))
 	A_mul_B!(result, A, x)
 	return result
 end
@@ -106,7 +106,7 @@ end
 function *(A::LowRankCovMatrix, B::Matrix)
 	result = zeros(Float64, size(A, 1), size(B, 2))
 	for i = 1:length(A.samples)
-		BLAS.ger!(1. / (length(A.samples) - 1), A.samples[i], At_mul_B(B, A.samples[i]), result)
+		BLAS.ger!(1. / (length(A.samples) - 1), A.samples[i], transpose(B) * A.samples[i], result)
 	end
 	return result
 end

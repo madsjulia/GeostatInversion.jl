@@ -28,7 +28,7 @@ function getxis(::Type{Val{:iwantfields}}, samplefield::Function, numfields::Int
 	fields = RobustPmap.rpmap(i->samplefield(), 1:numfields; t=Array{Float64, 1})
 	lrcm = LowRankCovMatrix(fields)
 	Z = randsvdwithseed(lrcm, numxis, p, q, seed)
-	xis = Array{Array{Float64, 1}}(numxis)
+	xis = Array{Array{Float64, 1}}(undef, numxis)
 	for i = 1:numxis
 		xis[i] = Z[:, i]
 	end
@@ -59,7 +59,7 @@ function getxis(samplefield::Function, numfields::Int, numxis::Int, p::Int, q::I
 end
 
 function getxis(Q::Matrix, numxis::Int, p::Int, q::Int=3, seed=nothing)#numxis is the number of xis, p is oversampling for randsvd accuracy, q is the number of power iterations -- see review paper by Halko et al
-	xis = Array{Array{Float64, 1}}(numxis)
+	xis = Array{Array{Float64, 1}}(undef, numxis)
 	Z = randsvdwithseed(Q, numxis, p, q, seed)
 	for i = 1:numxis
 		xis[i] = Z[:, i]

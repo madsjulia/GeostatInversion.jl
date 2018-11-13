@@ -4,7 +4,7 @@ module RandMatFact
 using LinearAlgebra
 
 function colnorms(Y)
-	norms = Array{Float64}(size(Y, 2))
+	norms = Array{Float64}(undef, size(Y, 2))
 	for i = 1:size(Y, 2)
 		norms[i] = norm(Y[:, i])
 	end
@@ -17,11 +17,11 @@ function rangefinder(A; epsilon=1e-8, r=10)#implements algorithm 4.2 in halko et
 	Yfull = zeros(Float64, n, r + min(n, m))
 	Y = view(Yfull, :, 1:r)
 	BLAS.gemm!('N', 'N', 1., A, randn(n, r), 0., Y)
-	omega = Array{Float64}(n)
+	omega = Array{Float64}(undef, n)
 	j = 0
 	Qfull = zeros(Float64, m, min(n, m))
-	tempvec = Array{Float64}(m)
-	Aomega = Array{Float64}(m)
+	tempvec = Array{Float64}(undef, m)
+	Aomega = Array{Float64}(undef, m)
 	while maximum(colnorms(view(Yfull, :, j+1:j+r))) > epsilon / sqrt(200 / pi)
 		j = j + 1
 		Yj = view(Yfull, :, j)

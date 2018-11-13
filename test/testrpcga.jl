@@ -3,6 +3,8 @@ import RobustPmap
 import Test
 import SparseArrays
 import LinearAlgebra
+using Distributed
+using SparseArrays
 
 @stderrcapture function pcgalowranksize(numetas=10, numobs=20)
 	etas = [rand(numobs) for i = 1 : numetas]
@@ -17,7 +19,7 @@ end
 	noiselevels = [1e16, 0.]#none, nuge
 	etagenerators = [zeros, randn]
 	HXgenerators = [zeros, randn]
-	etas = Array{Array{Float64, 1}}(numetas)
+	etas = Array{Array{Float64, 1}}(undef, numetas)
 	for noiselevel in noiselevels
 		for etagenerator in etagenerators
 			for HXgenerator in HXgenerators
@@ -27,7 +29,7 @@ end
 					BLAS.ger!(1., etas[i], etas[i], HQH)
 				end
 				HX = HXgenerator(numobs)
-				R = noiselevel * SparseArrays.speye(numobs)
+				R = noiselevel * SparseArrays.SparseMatrixCSC(LinearAlgebra.I, numobs, numobs)
 				bigA = [(HQH + R) HX; transpose(HX) zeros(1, 1)]
 				lrbigA = GeostatInversion.PCGALowRankMatrix(etas, HX, R)
 				for i = 1:numobs + 1
@@ -43,32 +45,32 @@ end
 @stderrcapture function simplelowrankcovtest()
 	samples = Array{Float64, 1}[[-.5, 0., .5], [1., -1., 0.], [-.5, 1., -.5]]
 	lrcm = GeostatInversion.LowRankCovMatrix(samples)
-	fullcm = LinearAlgebra.eye(3) * lrcm
-	@Test.test isapprox(fullcm, lrcm * LinearAlgebra.eye(3))
+	fullcm = LinearAlgebra.Matrix{Float64}(LinearAlgebra.I, 3, 3) * lrcm
+	@Test.test isapprox(fullcm, lrcm * LinearAlgebra.Matrix{Float64}(LinearAlgebra.I, 3, 3))
 	@Test.test isapprox(sum(map(x->x * x', samples)) / (length(samples) - 1), fullcm)
 	@Test.test isapprox(sum(map(x->x * x', samples)) / (length(samples) - 1), fullcm)
 	for i = 1:100
 		x = randn(3, 3)
 		@Test.test isapprox(fullcm * x, lrcm * x)
-		@Test.test isapprox(permutedims(fullcm) * x, permutedims(lrcm) * x)
+		@Test.test isapprox(fullcm' * x, lrcm' * x)
 	end
 end
 
 @stderrcapture function lowrankcovconsistencytest()
-	const N = 10000
-	const M = 100
+	N = 10000
+	M = 100
 	sqrtcovmatrix = randn(M, M)
 	covmatrix = sqrtcovmatrix * sqrtcovmatrix'
-	samples = Array{Array{Float64, 1}}(N)
-	onesamples = Array{Float64}(N)
-	twosamples = Array{Float64}(N)
+	samples = Array{Array{Float64, 1}}(undef, N)
+	onesamples = Array{Float64}(undef, N)
+	twosamples = Array{Float64}(undef, N)
 	for i = 1:N
 		samples[i] = sqrtcovmatrix * randn(M)
 		onesamples[i] = samples[i][1]
 		twosamples[i] = samples[i][2]
 	end
 	lrcm = GeostatInversion.LowRankCovMatrix(samples)
-	lrcmfull = lrcm * LinearAlgebra.eye(M)
+	lrcmfull = lrcm * LinearAlgebra.Matrix{Float64}(LinearAlgebra.I, M, M)
 	@Test.test isapprox(norm(lrcmfull - covmatrix, 2), 0.; atol=M ^ 2 / sqrt(N))
 	for i = 1:100
 		x = randn(M)
@@ -83,7 +85,7 @@ end
 	samplefield() = GeostatInversion.FFTRF.powerlaw_structuredgrid([25, 25], 2., 3.14, -3.5)[1:end]
 	lrcmxis, fields = GeostatInversion.getxis(Val{:iwantfields}, samplefield, numfields, numxis, p, 3, 0)
 	lrcm = GeostatInversion.LowRankCovMatrix(fields)
-	fullcm = LinearAlgebra.eye(size(lrcm, 1)) * lrcm
+	fullcm = LinearAlgebra.Matrix{Float64}(LinearAlgebra.I, size(lrcm, 1), size(lrcm, 1)) * lrcm
 	fullxis = GeostatInversion.getxis(fullcm, numxis, p, 3, 0)
 	for i = 1:length(fullxis)
 		#=
@@ -110,7 +112,7 @@ end
 	xis = GeostatInversion.getxis(Q, M, round(Int, 0.1 * M))
 	X = fill(mu, N)
 	noiselevel = 0.0001
-	R = noiselevel ^ 2 * SparseArrays.speye(N)
+	R = noiselevel ^ 2 * SparseArrays.SparseMatrixCSC(LinearAlgebra.I, N, N)
 	yobs = truey + noiselevel * randn(N)
 	p0 = fill(mu, N)
 	return forward, p0, X, xis, R, yobs, truep

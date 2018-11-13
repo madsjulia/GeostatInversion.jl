@@ -34,7 +34,7 @@ end
 
 function pcgalsqriteration(forwardmodel::Function, s::Vector, X::Vector, xis::Array{Array{Float64, 1}, 1}, R, y::Vector, delta::Float64)
 	p = 1#p = 1 because X is a vector rather than a full matrix
-	paramstorun = Array{Array{Float64, 1}}(length(xis) + 3)
+	paramstorun = Array{Array{Float64, 1}}(undef, length(xis) + 3)
 	for i = 1:length(xis)
 		paramstorun[i] = s + delta * xis[i]
 	end
@@ -43,7 +43,7 @@ function pcgalsqriteration(forwardmodel::Function, s::Vector, X::Vector, xis::Ar
 	paramstorun[length(xis) + 3] = s
 	results = pmap(forwardmodel, paramstorun)
 	hs = results[length(xis) + 3]
-	etas = Array{Array{Float64, 1}}(length(xis))
+	etas = Array{Array{Float64, 1}}(undef, length(xis))
 	for i = 1:length(xis)
 		etas[i] = (results[i] - hs) / delta
 	end
