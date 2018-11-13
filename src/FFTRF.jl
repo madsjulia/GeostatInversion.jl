@@ -117,10 +117,11 @@ end
 		@Base.Cartesian.nexprs $ndims j->begin minx_j, maxx_j = extrema(points[j, :]) end
 		@Base.Cartesian.nexprs $ndims j->begin x_j = range(minx_j; step=(maxx_j - minx_j) / (size(structuredvals, j) - 1), length=size(structuredvals, j)) end
 		# valinterp = Grid.CoordInterpGrid($t, structuredvals, Grid.BCnil, Grid.InterpLinear)
-		valinterp = Interpolations.scale(Interpolations.interpolate(structuredvals, Interpolations.BSpline(Interpolations.Linear()), Interpolations.OnGrid()), $t...)
+		valinterp = Interpolations.scale(Interpolations.interpolate(structuredvals, Interpolations.BSpline(Interpolations.Linear())), $t...)
+		valexterp = Interpolations.extrapolate(valinterp, Interpolations.Flat())
 		result = Array{Float64}(undef, size(points, 2))
 		for i = 1:length(result)
-			result[i] = valinterp[points[:, i]...]
+			result[i] = valexterp(points[:, i]...)
 		end
 		return result
 	end

@@ -50,7 +50,7 @@ end
 	for i = 1:100
 		x = randn(3, 3)
 		@Test.test isapprox(fullcm * x, lrcm * x)
-		@Test.test isapprox(fullcm' * x, lrcm' * x)
+		@Test.test isapprox(permutedims(fullcm) * x, permutedims(lrcm) * x)
 	end
 end
 
