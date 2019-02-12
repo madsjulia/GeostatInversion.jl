@@ -1,5 +1,6 @@
 import GeostatInversion
 import Test
+import Random
 
 @stderrcapture function basictest()
 	function f(x::Array{Float64, 1})

@@ -1,4 +1,5 @@
 import GeostatInversion
+import LinearAlgebra
 import Test
 
 @stderrcapture function makeA(n, m)
@@ -11,20 +12,21 @@ end
 	A = makeA(n, m)
 	Q = GeostatInversion.RandMatFact.rangefinder(A)
 	@Test.test isapprox(m, size(Q, 2), atol=1)
-	@Test.test isapprox(vecnorm(A - Q * ctranspose(Q) * A), 0., atol=1e-8)
+	@Test.test isapprox(LinearAlgebra.norm(A - Q * Q' * A), 0., atol=1e-8)
 	Q = GeostatInversion.RandMatFact.rangefinder(A, m, 2)
 	@Test.test isapprox(m, size(Q, 2), atol=1)
-	@Test.test isapprox(vecnorm(A - Q * ctranspose(Q) * A), 0., atol=1e-8)
+	@Test.test isapprox(LinearAlgebra.norm(A - Q * Q' * A), 0., atol=1e-8)
 end
 
 @stderrcapture function test_eig_nystrom()
 	A = Float64[2 -1 0; -1 2 -1; 0 -1 2]
 	Q = GeostatInversion.RandMatFact.rangefinder(A)
 	U, Sigmavec = GeostatInversion.RandMatFact.eig_nystrom(A, Q)
-	Sigma = diagm(Sigmavec)
+	Sigma = LinearAlgebra.Diagonal(Sigmavec)
 	Lambda = Sigma * Sigma
-	eigvals, eigvecs = eig(A)
-	@Test.test isapprox(vecnorm(sort(eigvals, rev=true) - diag(Lambda)), 0., atol=1e-8)
+	eigvals, eigvecs = LinearAlgebra.eigen(A)
+	@show LinearAlgebra.norm(sort(eigvals, rev=true) - LinearAlgebra.diag(Lambda))
+	@Test.test isapprox(LinearAlgebra.norm(sort(eigvals, rev=true) - LinearAlgebra.diag(Lambda)), 0., atol=1e-8)
 end
 
 @Test.testset "RMF" begin

@@ -43,7 +43,7 @@ function pcgadirectiteration!(HQH::Matrix, forwardmodel::Function, s::Vector, X:
 	paramstorun[length(xis) + 1] = s + delta * X
 	paramstorun[length(xis) + 2] = s + delta * s
 	paramstorun[length(xis) + 3] = s
-	results = pmap(forwardmodel, paramstorun)
+	results = Distributed.pmap(forwardmodel, paramstorun)
 	callback(s, results[length(xis) + 3])
 	hs = results[length(xis) + 3]
 	fill!(HQH, 0.)

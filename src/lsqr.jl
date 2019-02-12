@@ -41,7 +41,7 @@ function pcgalsqriteration(forwardmodel::Function, s::Vector, X::Vector, xis::Ar
 	paramstorun[length(xis) + 1] = s + delta * X
 	paramstorun[length(xis) + 2] = s + delta * s
 	paramstorun[length(xis) + 3] = s
-	results = pmap(forwardmodel, paramstorun)
+	results = Distributed.pmap(forwardmodel, paramstorun)
 	hs = results[length(xis) + 3]
 	etas = Array{Array{Float64, 1}}(undef, length(xis))
 	for i = 1:length(xis)

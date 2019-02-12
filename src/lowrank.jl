@@ -1,11 +1,14 @@
 import Base.*
 import Base.eltype
 import Base.size
+#=
 import LinearAlgebra.Ac_mul_B!
 import LinearAlgebra.At_mul_B!
 import LinearAlgebra.A_mul_B!
+=#
 import Base.\
 import Base.transpose
+import Base.adjoint
 import LinearAlgebra
 
 mutable struct LowRankCovMatrix
@@ -32,7 +35,11 @@ mutable struct PCGALowRankMatrix
 	R
 end
 
-function transpose(A::LowRankCovMatrix)
+function adjoint(A::Union{PCGALowRankMatrix,LowRankCovMatrix})
+	return A
+end
+
+function transpose(A::Union{PCGALowRankMatrix,LowRankCovMatrix})
 	return A
 end
 
@@ -65,7 +72,7 @@ function size(A::PCGALowRankMatrix, i::Int)
 	end
 end
 
-function A_mul_B!(v::Vector, A::LowRankCovMatrix, x::Vector)
+function LinearAlgebra.mul!(v::Vector, A::LowRankCovMatrix, x::Vector)
 	fill!(v, 0.)
 	for i = 1:length(A.samples)
 		BLAS.axpy!(1. / (length(A.samples) - 1), A.samples[i] * dot(x, A.samples[i]), v)
@@ -73,7 +80,7 @@ function A_mul_B!(v::Vector, A::LowRankCovMatrix, x::Vector)
 	return v
 end
 
-function A_mul_B!(v::Vector, A::PCGALowRankMatrix, x::Vector)
+function LinearAlgebra.mul!(v::Vector, A::PCGALowRankMatrix, x::Vector)
 	xshort = x[1:end - 1]
 	v[1:end - 1] = A.R * xshort
 	v[end] = dot(A.HX, xshort)
@@ -89,6 +96,7 @@ function A_mul_B!(v::Vector, A::PCGALowRankMatrix, x::Vector)
 	return v
 end
 
+#=
 function Ac_mul_B!(v::Vector, A::Union{LowRankCovMatrix, PCGALowRankMatrix}, x::Vector)
 	return A_mul_B!(v, A, x)#matrix is symmetric
 end
@@ -96,10 +104,11 @@ end
 function At_mul_B!(v::Vector, A::Union{LowRankCovMatrix, PCGALowRankMatrix}, x::Vector)
 	return A_mul_B!(v, A, x)#A is symmetric
 end
+=#
 
 function *(A::PCGALowRankMatrix, x::Vector)
 	result = Array{Float64}(undef, size(A, 1))
-	A_mul_B!(result, A, x)
+	mul!(result, A, x)
 	return result
 end
 
@@ -119,9 +128,13 @@ function *(B::Matrix, A::LowRankCovMatrix)
 	return result
 end
 
+function *(B::LinearAlgebra.Adjoint, A::LowRankCovMatrix)
+	return (A * B.parent)'
+end
+
 function *(A::LowRankCovMatrix, x::Vector)
 	result = zeros(Float64, size(A, 1))
-	A_mul_B!(result, A, x)
+	mul!(result, A, x)
 	return result
 end
 

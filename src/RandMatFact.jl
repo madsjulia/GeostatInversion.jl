@@ -1,6 +1,7 @@
 "Random Matrix Factorization Functions"
 module RandMatFact
 
+import Random
 using LinearAlgebra
 
 function colnorms(Y)
@@ -32,7 +33,7 @@ function rangefinder(A; epsilon=1e-8, r=10)#implements algorithm 4.2 in halko et
 		Qj = view(Qfull, :, j)
 		BLAS.axpy!(1 / norm(Yj), Yj, Qj)
 		Q = view(Qfull, :, 1:j)
-		randn!(omega)
+		Random.randn!(omega)
 		Aomega = BLAS.gemv!('N', 1., A, omega, 0., Aomega)
 		QtAomega = BLAS.gemv('T', 1., Q, Aomega)
 		ynew = Aomega - Q * QtAomega
@@ -53,22 +54,26 @@ function rangefinder(A, l::Int64, numiterations::Int64)
 	Omega = randn(n, l) #Gaussian requires less oversampling but is more costly to construct, see sect 4.6 Halko
 	Y = A * Omega
 	if numiterations == 0
-		Q, R, () = qr(Y, Val{true})#pivoted QR is more numerically stable
-		return Q
+		F = LinearAlgebra.qr(Y, Val(true))#pivoted QR is more numerically stable
+		return Matrix(F.Q)
 	elseif numiterations > 0
-		Q, R = lu(Y)
+		F = LinearAlgebra.lu(Y)
+		Q = F.L
 	else
 		error("parameter numiterations should be positive, but numiterations=$numiterations")
 	end
 	#Conduct normalized power iterations.
 	for i = 1:numiterations
 		Q = A' * Q
-		Q, R = lu(Q)
+		F = LinearAlgebra.lu(Q)
+		Q = F.L
 		Q = A * Q
 		if i < numiterations
-			Q, R = lu(Q)
+			F = LinearAlgebra.lu(Q)
+			Q = F.L
 		else
-			Q, R, () = qr(Q, Val{true})
+			F = LinearAlgebra.qr(Q, Val(true))
+			Q = Matrix(F.Q)
 		end
 	end
 	return Q
@@ -79,15 +84,15 @@ function randsvd(A, K::Int, p::Int, q::Int)
 	Q = rangefinder(A, K + p, q);
 	B = Q' * A;
 	(), S, V = svd(B);#This is algorithm 5.1 from Halko et al, Direct SVD
-	Sh = diagm(sqrt.([S[1:K]; zeros(p)]))#Cut back to K from K+p
+	Sh = LinearAlgebra.Diagonal(sqrt.([S[1:K]; zeros(p)]))#Cut back to K from K+p
 	Z = V * Sh
 	return Z
 end
 
 function eig_nystrom(A, Q)#implements algorithm 5.5 from Halko et al
 	B1 = A * Q
-	B2 = ctranspose(Q) * B1
-	C = chol(Hermitian(B2))
+	B2 = Q' * B1
+	C = LinearAlgebra.cholesky(Hermitian(B2)).U
 	F = B1 * inv(C)#this should be replaced by triangular solve if it is slowing things down
 	U, Sigmavec, V = svd(F)
 	#Sigma = diagm(Sigmavec)

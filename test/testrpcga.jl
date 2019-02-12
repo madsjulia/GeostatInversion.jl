@@ -3,6 +3,7 @@ import RobustPmap
 import Test
 import SparseArrays
 import LinearAlgebra
+import Random
 using Distributed
 using SparseArrays
 
@@ -26,7 +27,7 @@ end
 				HQH = zeros(numobs, numobs)
 				for i = 1:numetas
 					etas[i] = etagenerator(numobs)
-					BLAS.ger!(1., etas[i], etas[i], HQH)
+					LinearAlgebra.BLAS.ger!(1., etas[i], etas[i], HQH)
 				end
 				HX = HXgenerator(numobs)
 				R = noiselevel * SparseArrays.SparseMatrixCSC(LinearAlgebra.I, numobs, numobs)
@@ -71,7 +72,7 @@ end
 	end
 	lrcm = GeostatInversion.LowRankCovMatrix(samples)
 	lrcmfull = lrcm * LinearAlgebra.Matrix{Float64}(LinearAlgebra.I, M, M)
-	@Test.test isapprox(norm(lrcmfull - covmatrix, 2), 0.; atol=M ^ 2 / sqrt(N))
+	@Test.test isapprox(LinearAlgebra.norm(lrcmfull - covmatrix, 2), 0.; atol=M ^ 2 / sqrt(N))
 	for i = 1:100
 		x = randn(M)
 		@Test.test isapprox(lrcm * x, lrcmfull * x)
@@ -95,7 +96,7 @@ end
 		we get from the full matrix.
 		=#
 		#This test is also tricky because the randsvd's in the two getxis calls need to be generating the same random numbers
-		@Test.test isapprox(0., min(norm(fullxis[i] - lrcmxis[i]), norm(fullxis[i] + lrcmxis[i])), atol=1e-6)
+		@Test.test isapprox(0., min(LinearAlgebra.norm(fullxis[i] - lrcmxis[i]), LinearAlgebra.norm(fullxis[i] + lrcmxis[i])), atol=1e-6)
 	end
 end
 
@@ -103,8 +104,8 @@ end
 	x = randn(N)
 	Q0 = randn(M, N)
 	Q = Q0' * Q0
-	sqrtQ = sqrtm(Q)
-	truep = real(sqrtQ * randn(N)) + mu
+	sqrtQ = Q^0.5
+	truep = real(sqrtQ * randn(N)) .+ mu
 	function forward(p::Vector)
 		return p .* x
 	end
@@ -121,10 +122,10 @@ end
 @stderrcapture function simpletestpcga(M::Int, N::Int, mu::Float64=0.)
 	forward, p0, X, xis, R, yobs, truep = setupsimpletest(M, N, mu)
 	popt = GeostatInversion.pcgadirect(forward, p0, X, xis, R, yobs)
-	@Test.test isapprox(norm(popt - truep) / norm(truep), 0., atol=2e-2)
+	@Test.test isapprox(LinearAlgebra.norm(popt - truep) / LinearAlgebra.norm(truep), 0., atol=2e-2)
 	if M < N / 6
 		popt = GeostatInversion.pcgalsqr(forward, p0, X, xis, R, yobs)
-		@Test.test isapprox(norm(popt - truep) / norm(truep), 0., atol=2e-2)
+		@Test.test isapprox(LinearAlgebra.norm(popt - truep) / LinearAlgebra.norm(truep), 0., atol=2e-2)
 	end
 end
 
@@ -132,14 +133,14 @@ end
 	forward, p0, X, xis, R, yobs, truep = setupsimpletest(M, N, mu)
 	S = randn(Nreduced, N) * (1 / sqrt(N))
 	popt = GeostatInversion.rga(forward, p0, X, xis, R, yobs, S)
-	@Test.test isapprox(norm(popt - truep) / norm(truep), 0., atol=2e-2)
+	@Test.test isapprox(LinearAlgebra.norm(popt - truep) / LinearAlgebra.norm(truep), 0., atol=2e-2)
 end
 
 #=
 function simpletestpcgalm(M, N, mu=0.)
 	forward, p0, X, xis, R, yobs, truep = setupsimpletest(M, N, mu)
 	popt = GeostatInversion.pcgalm(forward, p0, X, xis, diag(R), yobs)
-	@Test.test_approx_eq_eps norm(popt - truep) / norm(truep) 0. 2e-2
+	@Test.test_approx_eq_eps LinearAlgebra.norm(popt - truep) / LinearAlgebra.norm(truep) 0. 2e-2
 end
 =#
 

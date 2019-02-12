@@ -9,7 +9,7 @@ function makejacobian(f::Function, h::Float64=sqrt(eps(Float64)))
 			xphs[i][i] += h
 		end
 		xphs[end] = copy(x)
-		ys = pmap(f, xphs)
+		ys = Distributed.pmap(f, xphs)
 		J = Array{eltype(ys[1])}(undef, length(ys[1]), length(x))
 		for i = 1:length(x)
 			J[:, i] = ys[i] - ys[end]
@@ -28,7 +28,7 @@ function makegradient(f::Function, h::Float64=sqrt(eps(Float64)))
 			xphs[i][i] += h
 		end
 		xphs[end] = copy(x)
-		ys = pmap(f, xphs)
+		ys = Distributed.pmap(f, xphs)
 		grad = Array{eltype(ys)}(undef, length(x))
 		for i = 1:length(x)
 			grad[i] = ys[i] - ys[end]

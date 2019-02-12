@@ -3,7 +3,9 @@ __precompile__()
 module GeostatInversion
 
 import IterativeSolvers
+import Random
 import RobustPmap
+import Distributed
 using LinearAlgebra
 
 include("FFTRF.jl")
@@ -20,7 +22,7 @@ function randsvdwithseed(Q, numxis, p, q, seed::Nothing)
 end
 
 function randsvdwithseed(Q, numxis, p, q, seed::Int)
-	Random.seed!
+	Random.seed!(seed)
 	return RandMatFact.randsvd(Q, numxis, p, q)
 end
 
