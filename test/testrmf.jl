@@ -25,7 +25,6 @@ end
 	Sigma = LinearAlgebra.Diagonal(Sigmavec)
 	Lambda = Sigma * Sigma
 	eigvals, eigvecs = LinearAlgebra.eigen(A)
-	@show LinearAlgebra.norm(sort(eigvals, rev=true) - LinearAlgebra.diag(Lambda))
 	@Test.test isapprox(LinearAlgebra.norm(sort(eigvals, rev=true) - LinearAlgebra.diag(Lambda)), 0., atol=1e-8)
 end
 
