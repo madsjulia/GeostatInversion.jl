@@ -1,5 +1,8 @@
 module FDDerivatives
 
+import Distributed
+import LinearAlgebra
+
 "Create Jacobian function"
 function makejacobian(f::Function, h::Float64=sqrt(eps(Float64)))
 	function jacobian(x::Vector)
@@ -14,7 +17,7 @@ function makejacobian(f::Function, h::Float64=sqrt(eps(Float64)))
 		for i = 1:length(x)
 			J[:, i] = ys[i] - ys[end]
 		end
-		scale!(J, 1 / h)
+		LinearAlgebra.lmul!(1 / h, J)
 		return J
 	end
 end
@@ -33,7 +36,7 @@ function makegradient(f::Function, h::Float64=sqrt(eps(Float64)))
 		for i = 1:length(x)
 			grad[i] = ys[i] - ys[end]
 		end
-		scale!(grad, 1 / h)
+		LinearAlgebra.lmul!(1 / h, grad)
 		return grad
 	end
 end
