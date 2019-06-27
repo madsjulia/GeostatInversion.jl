@@ -1,6 +1,6 @@
 name = "GeostatInversion"
-authors = ["Daniel O'Malley <omalled@lanl.gov>", "Velimir V Vesselinov <velimir.vesselinov@gmail.com>"]
 uuid = "acd30bff-8734-59b1-86d1-c3ef2efb63d6"
+authors = ["Daniel O'Malley <omalled@lanl.gov>", "Velimir V Vesselinov <velimir.vesselinov@gmail.com>"]
 version = "0.3.1"
 
 [deps]
