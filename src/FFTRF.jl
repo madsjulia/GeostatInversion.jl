@@ -41,7 +41,7 @@ end
 	if dimensionvaltype == Type{Val{2}}
 		loop = quote
 			S_f = zeros(Ns[2], Ns[1])
-			for j = 1:length(S_f)
+			for j = eachindex(S_f)
 				S_f[j] += fouriercoords[1][1 + div(j - 1, length(fouriercoords[2]))] ^ 2
 				S_f[j] += fouriercoords[2][1 + rem(j - 1, length(fouriercoords[2]))] ^ 2
 			end
@@ -49,7 +49,7 @@ end
 	elseif dimensionvaltype == Type{Val{3}}
 		loop = quote
 			S_f = zeros(Ns[2], Ns[1], Ns[3])
-			for j = 1:length(S_f)
+			for j = eachindex(S_f)
 				S_f[j] += fouriercoords[1][1 + rem(div(j - 1, length(fouriercoords[2])), length(fouriercoords[1]))] ^ 2
 				S_f[j] += fouriercoords[2][1 + rem(j - 1, length(fouriercoords[2]))] ^ 2
 				S_f[j] += fouriercoords[3][1 + div(j - 1, length(fouriercoords[1]) * length(fouriercoords[2]))] ^ 2
@@ -60,7 +60,7 @@ end
 	end
 	q = quote
 		$loop
-		for i = 1:length(S_f)
+		for i = eachindex(S_f)
 			S_f[i] = S_f[i] ^ (.25 * beta)
 			if isinf(S_f[i])
 				S_f[i] = 0
@@ -74,7 +74,7 @@ end
 function mulbyphi(S::Array)
 	phi = randn(size(S))
 	result = Array{Complex{eltype(S)}}(undef, size(S))
-	for i = 1:length(phi)
+	for i = eachindex(phi)
 		result[i] = S[i] * Complex{eltype(S)}(cospi(2 * phi[i]), sinpi(2 * phi[i]))
 	end
 	return result
@@ -84,7 +84,7 @@ function powerlaw_structuredgrid(Ns::Vector, k0::Number, dk::Number, beta::Numbe
 	originalNs = Ns
 	Ns = 2 * Ns
 	fouriercoords = Array{Array{Float64, 1}}(undef, length(Ns))
-	for i = 1:length(Ns)
+	for i = eachindex(Ns)
 		fouriercoords[i] = vcat(collect(0:originalNs[i]), -1 * collect((originalNs[i] - 1):-1:1))
 	end
 	sqrtS_f = computesqrtS_f(fouriercoords, Ns, beta, Val{length(Ns)})
@@ -93,7 +93,7 @@ function powerlaw_structuredgrid(Ns::Vector, k0::Number, dk::Number, beta::Numbe
 	finalk = reducek(kcomplex, Val{length(Ns)}) # the result is periodic and 2x (in each dimension) as big as it needs to be -- make it smaller and non-periodic
 	stdfinalk = Statistics.std(finalk)
 	meanfinalk = Statistics.mean(finalk)
-	for i = 1:length(finalk)
+	for i = eachindex(finalk)
 		finalk[i] = dk * (finalk[i] - meanfinalk) / stdfinalk + k0
 	end
 	return finalk
@@ -120,7 +120,7 @@ end
 		valinterp = Interpolations.scale(Interpolations.interpolate(structuredvals, Interpolations.BSpline(Interpolations.Linear())), $t...)
 		valexterp = Interpolations.extrapolate(valinterp, Interpolations.Flat())
 		result = Array{Float64}(undef, size(points, 2))
-		for i = 1:length(result)
+		for i = eachindex(result)
 			result[i] = valexterp(points[:, i]...)
 		end
 		return result

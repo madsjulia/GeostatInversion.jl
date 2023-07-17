@@ -37,7 +37,7 @@ end
 function pcgadirectiteration!(HQH::Matrix, forwardmodel::Function, s::Vector, X::Vector, xis::Array{Array{Float64, 1}, 1}, R, y::Vector, delta::Float64, callback)
 	p = 1#p = 1 because X is a vector rather than a full matrix
 	paramstorun = Array{Array{Float64, 1}}(undef, length(xis) + 3)
-	for i = 1:length(xis)
+	for i = eachindex(xis)
 		paramstorun[i] = s + delta * xis[i]
 	end
 	paramstorun[length(xis) + 1] = s + delta * X
@@ -47,7 +47,7 @@ function pcgadirectiteration!(HQH::Matrix, forwardmodel::Function, s::Vector, X:
 	callback(s, results[length(xis) + 3])
 	hs = results[length(xis) + 3]
 	fill!(HQH, 0.)
-	for i = 1:length(xis)
+	for i = eachindex(xis)
 		etai = (results[i] - hs) / delta
 		LinearAlgebra.BLAS.ger!(1., etai, etai, HQH)
 	end
@@ -59,7 +59,7 @@ function pcgadirectiteration!(HQH::Matrix, forwardmodel::Function, s::Vector, X:
 	beta_bar = x[end]
 	xi_bar = x[1:end-1]
 	s = X * beta_bar
-	for i = 1:length(xis)#add HQ' * xi_bar to s
+	for i = eachindex(xis)#add HQ' * xi_bar to s
 		etai = (results[i] - hs) / delta
 		s += xis[i] * dot(etai, xi_bar)
 	end

@@ -88,7 +88,7 @@ end
 	lrcm = GeostatInversion.LowRankCovMatrix(fields)
 	fullcm = LinearAlgebra.Matrix{Float64}(LinearAlgebra.I, size(lrcm, 1), size(lrcm, 1)) * lrcm
 	fullxis = GeostatInversion.getxis(fullcm, numxis, p, 3, 0)
-	for i = 1:length(fullxis)
+	for i = eachindex(fullxis)
 		#=
 		Apparently due to minor discrepancies (rounding error), the LU decomposition is not
 		consistently reproducible. As a consequence, the randsvd part of the getxis can

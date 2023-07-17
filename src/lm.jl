@@ -2,7 +2,7 @@ import Optim
 
 function getmodelparams(x, X, xis::Array{Array{Float64, 1}})
 	modelparams = X * x[end]
-	for i = 1:length(xis)
+	for i = eachindex(xis)
 		BLAS.axpy!(x[i], xis[i], modelparams)
 	end
 	return modelparams

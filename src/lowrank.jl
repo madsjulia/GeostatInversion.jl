@@ -16,13 +16,13 @@ mutable struct LowRankCovMatrix
 	function LowRankCovMatrix(samples::Array{Array{Float64, 1}, 1})
 		zeromeansamples = Array{Array{Float64, 1}}(undef, length(samples))
 		means = zeros(Float64, length(samples[1]))
-		for i = 1:length(samples)
-			for j = 1:length(means)
+		for i = eachindex(samples)
+			for j = eachindex(means)
 				means[j] += samples[i][j]
 			end
 		end
 		means /= length(samples)
-		for i = 1:length(samples)
+		for i = eachindex(samples)
 			zeromeansamples[i] = samples[i] - means
 		end
 		return new(zeromeansamples)
@@ -74,7 +74,7 @@ end
 
 function LinearAlgebra.mul!(v::Vector, A::LowRankCovMatrix, x::Vector)
 	fill!(v, 0.)
-	for i = 1:length(A.samples)
+	for i = eachindex(A.samples)
 		BLAS.axpy!(1. / (length(A.samples) - 1), A.samples[i] * dot(x, A.samples[i]), v)
 	end
 	return v
@@ -84,7 +84,7 @@ function LinearAlgebra.mul!(v::Vector, A::PCGALowRankMatrix, x::Vector)
 	xshort = x[1:end - 1]
 	v[1:end - 1] = A.R * xshort
 	v[end] = dot(A.HX, xshort)
-	for i = 1:length(A.etas)
+	for i = eachindex(A.etas)
 		dotp = dot(A.etas[i], xshort)
 		for j = 1:length(v) - 1
 			v[j] += A.etas[i][j] * dotp
@@ -114,7 +114,7 @@ end
 
 function *(A::LowRankCovMatrix, B::Matrix)
 	result = zeros(Float64, size(A, 1), size(B, 2))
-	for i = 1:length(A.samples)
+	for i = eachindex(A.samples)
 		BLAS.ger!(1. / (length(A.samples) - 1), A.samples[i], transpose(B) * A.samples[i], result)
 	end
 	return result
@@ -122,7 +122,7 @@ end
 
 function *(B::Matrix, A::LowRankCovMatrix)
 	result = zeros(Float64, size(B, 1), size(A, 2))
-	for i = 1:length(A.samples)
+	for i = eachindex(A.samples)
 		BLAS.ger!(1. / (length(A.samples) - 1), B * A.samples[i], A.samples[i], result)
 	end
 	return result
