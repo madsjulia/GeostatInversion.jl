@@ -1,9 +1,9 @@
 import GeostatInversion
+import Random
 import RobustPmap
 import Test
 import SparseArrays
 import LinearAlgebra
-import Random
 using Distributed
 using SparseArrays
 
@@ -145,6 +145,7 @@ end
 =#
 
 @Test.testset "RPSGA" begin
+	@everywhere import Random
 	@everywhere Random.seed!(2017)
 	pcgalowranksize()
 	simplepcgalowranktest()
