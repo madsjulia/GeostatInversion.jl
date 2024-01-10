@@ -20,7 +20,7 @@ Randomized Geostatistical Approach (RGA) references:
 Two versions of PCGA are implemented in this package
 
 - `pcgadirect`, which uses full matrices and direct solvers during iterations
-- `pcgalsqr`, which uses low rank representations of the matrices combined with iterative solvers during iterations
+- `pcgalsqr`, which uses low-rank representations of the matrices combined with iterative solvers during iterations
 
 The RGA method, `rga`, can use either of these approaches using the keyword argument. That is, by doing `rga(...; pcgafunc=GeostatInversion.pcgadirect)` or `rga(...; pcgafunc=GeostatInversion.pcgalsqr)`.
 
@@ -54,9 +54,9 @@ MADS can execute a wide range of data- and model-based analyses:
 * Machine Learning and Blind Source Separation
 * Decision Analysis and Support
 
-MADS has been tested to perform HPC simulations on a wide-range multi-processor clusters and parallel environments (Moab, Slurm, etc.).
+MADS has been tested to perform HPC simulations on a wide-range of multi-processor clusters and parallel environments (Moab, Slurm, etc.).
 MADS utilizes adaptive rules and techniques which allows the analyses to be performed with a minimum user input.
-The code provides a series of alternative algorithms to execute each type of data- and model-based analyses.
+The code provides a series of alternative algorithms to execute each type of data- and model-based analysis.
 
 Documentation
 =============
@@ -73,7 +73,7 @@ Pkg.add("GeostatInversion")
 Installation behind a firewall
 ------------------------------
 
-Julia uses git for the package management.
+Julia uses git for package management.
 To install Julia packages behind a firewall, add the following lines in the `.gitconfig` file in your home directory:
 
 ```git
