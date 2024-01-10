@@ -1,7 +1,7 @@
 name = "GeostatInversion"
 uuid = "acd30bff-8734-59b1-86d1-c3ef2efb63d6"
 authors = ["Daniel O'Malley <omalled@lanl.gov>", "Velimir V Vesselinov <velimir.vesselinov@gmail.com>"]
-version = "1.2.0"
+version = "1.1.0"
 
 [deps]
 Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
