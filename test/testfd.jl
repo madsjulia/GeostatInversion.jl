@@ -11,14 +11,14 @@ import Random
 	end
 	testjacobianf = GeostatInversion.FDDerivatives.makejacobian(f)
 	x = [1., 2.]
-	@Test.test isapprox(jacobianf(x), testjacobianf(x), atol=1e-4)
+	Test.@test isapprox(jacobianf(x), testjacobianf(x), atol=1e-4)
 	for i = 1:10000
 		x = 10 * randn(2)
-		@Test.test isapprox(jacobianf(x), testjacobianf(x), atol=1e-4)
+		Test.@test isapprox(jacobianf(x), testjacobianf(x), atol=1e-4)
 	end
 end
 
 Random.seed!(2017)
-@Test.testset "Basic" begin
+Test.@testset "Basic" begin
 	basictest()
 end
