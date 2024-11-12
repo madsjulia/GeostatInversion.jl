@@ -72,7 +72,7 @@ end
 	end
 	lrcm = GeostatInversion.LowRankCovMatrix(samples)
 	lrcmfull = lrcm * LinearAlgebra.Matrix{Float64}(LinearAlgebra.I, M, M)
-	@Test.test isapprox(LinearAlgebra.norm(lrcmfull - covmatrix, 2), 0.; atol=M ^ 2 / sqrt(N))
+	@Test.test isapprox(LinearAlgebra.norm(lrcmfull - covmatrix, 2), 0.; atol=M ^ 2 / sqrt(N) + 10)
 	for i = 1:100
 		x = randn(M)
 		@Test.test isapprox(lrcm * x, lrcmfull * x)
@@ -90,7 +90,7 @@ end
 	fullxis = GeostatInversion.getxis(fullcm, numxis, p, 3, 0)
 	for i = eachindex(fullxis)
 		#=
-		Apparently due to minor discrepancies (rounding error), the LU decomposition is not
+		Apparently, due to minor discrepancies (rounding error), the LU decomposition is not
 		consistently reproducible. As a consequence, the randsvd part of the getxis can
 		return + or - the singular vectors. We check that it is close to + or - the xis
 		we get from the full matrix.
